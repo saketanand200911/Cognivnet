@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CognivNet — Umbrella Campus & D2M Hub</title>
+    <!-- Tailwind CSS for modern responsive design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for real-time live network throughput telemetry -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,500;1,600;1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col">
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="site-header bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="bg-cyan-500/10 p-2 rounded-lg border border-cyan-500/30 text-cyan-400">
+                <i data-lucide="radio" class="w-6 h-6 animate-pulse"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-wider text-cyan-400">COGNIVNET <span
+                        class="text-xs px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">5G/6G D2M
+                        Hub</span></h1>
+                <p class="text-xs text-slate-400">Intelligent Network Cognition & Umbrella Control Platform</p>
+            </div>
+        </div>
+        <nav class="main-nav" aria-label="Main navigation">
+            <a href="#overview">Overview</a>
+            <a href="#throughput-section">Telemetry</a>
+            <a href="#campus-zones">Campus zones</a>
+        </nav>
+        <div class="flex items-center space-x-4">
+            <div id="auth-badge"
+                class="text-xs bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>Role: <strong id="current-role-label">Student / Resident</strong></span>
+            </div>
+            <button onclick="toggleModal('login-modal')"
+                class="bg-cyan-600 hover:bg-cyan-500 text-xs font-semibold px-4 py-2 rounded-lg transition">Portal Login
+                / Register</button>
+        </div>
+    </header>
+
+    <!-- MAIN DASHBOARD CONTAINER -->
+    <main class="flex-1 p-6 grid grid-cols-1 lg:grid-cols-4 gap-6 max-w-7xl mx-auto w-full">
+
+        <section class="network-hero" id="overview" aria-labelledby="hero-title">
+            <div class="hero-copy">
+                <div class="eyebrow"><span class="eyebrow-dot"></span> THE CAMPUS NETWORK, IN SYNC</div>
+                <h2 id="hero-title">Intelligence in every <em>connection.</em></h2>
+                <p>One cognitive layer for every campus. See your network think, adapt, and respond in real time.</p>
+                <div class="hero-actions">
+                    <a class="hero-primary" href="#throughput-section">Explore live network <i data-lucide="arrow-down-right"></i></a>
+                    <span class="hero-caption"><i data-lucide="shield-check"></i> Resilient by design</span>
+                </div>
+            </div>
+            <div class="network-visual" aria-label="Live network connections linking the campus core to medical, security, and energy zones">
+                <svg class="network-lines" viewBox="0 0 520 300" preserveAspectRatio="none" aria-hidden="true">
+                    <defs>
+                        <linearGradient id="node-gradient" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#c9b8a0" stop-opacity=".9" />
+                            <stop offset="100%" stop-color="#a78b71" stop-opacity=".15" />
+                        </linearGradient>
+                    </defs>
+                    <path class="node-line" d="M260 150 C195 130 160 82 103 63" />
+                    <path class="node-line" d="M260 150 C327 122 365 88 426 72" />
+                    <path class="node-line" d="M260 150 C196 183 160 226 94 240" />
+                    <path class="node-line" d="M260 150 C330 184 368 222 433 237" />
+                    <path class="node-flow" d="M260 150 C195 130 160 82 103 63" />
+                    <path class="node-flow" d="M260 150 C327 122 365 88 426 72" />
+                    <path class="node-flow" d="M260 150 C196 183 160 226 94 240" />
+                    <path class="node-flow" d="M260 150 C330 184 368 222 433 237" />
+                </svg>
+                <div class="satellite satellite-one"><span class="satellite-icon"><i data-lucide="radio-tower"></i></span><span><strong>5G / 6G Core</strong><small>Primary network</small></span><b></b></div>
+                <div class="satellite satellite-two"><span class="satellite-icon"><i data-lucide="heart-pulse"></i></span><span><strong>Medical · A</strong><small>D2M priority</small></span><b></b></div>
+                <div class="satellite satellite-three"><span class="satellite-icon"><i data-lucide="shield"></i></span><span><strong>Security · B</strong><small>Load balanced</small></span><b></b></div>
+                <div class="satellite satellite-four"><span class="satellite-icon"><i data-lucide="zap"></i></span><span><strong>Energy · C</strong><small>Live telemetry</small></span><b></b></div>
+                <div class="network-core">
+                    <span class="core-orbit"></span>
+                    <span class="core-mark"><i data-lucide="radio"></i></span>
+                    <strong>COGNIVNET</strong>
+                    <small>COGNITIVE CORE</small>
+                </div>
+                <div class="network-live"><span></span><strong>LIVE</strong> All systems connected</div>
+            </div>
+        </section>
+
+        <!-- SIDEBAR CONTROLS -->
+        <aside class="lg:col-span-1 space-y-6">
+            <!-- Campus Selector Panel -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
+                <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3 flex items-center">
+                    <i data-lucide="building-2" class="w-4 h-4 mr-2 text-cyan-400"></i> Active Network
+                </h2>
+                <select id="campus-select" onchange="updateCampus()"
+                    class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-cyan-500">
+                    <option value="Global Central Campus">Global Central Campus</option>
+                    <option value="IIT Tech Park Hub">IIT Tech Park Hub</option>
+                    <option value="Metro University Smart Block">Metro University Smart Block</option>
+                </select>
+            </div>
+
+            <!-- Simulation Controls -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-4">
+                <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center">
+                    <i data-lucide="sliders" class="w-4 h-4 mr-2 text-cyan-400"></i> Simulation Controls
+                </h2>
+                <div>
+                    <label class="text-xs text-slate-400 block mb-1">Cognitive Network State</label>
+                    <select id="sim-scenario" onchange="triggerScenario()"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm focus:outline-none focus:border-cyan-500">
+                        <option value="normal">Normal Operation (Stable)</option>
+                        <option value="congestion">Campus Mega Event (High Congestion)</option>
+                        <option value="emergency">Emergency Crisis (D2M Trigger)</option>
+                        <option value="outage">Primary 5G Tower Outage</option>
+                    </select>
+                </div>
+                <div>
+                    <div class="flex justify-between text-xs text-slate-400 mb-1">
+                        <span>Base Traffic Load</span>
+                        <span id="traffic-val" class="text-cyan-400 font-bold">150 Mbps</span>
+                    </div>
+                    <input type="range" id="traffic-slider" min="20" max="500" value="150" step="10"
+                        oninput="updateTraffic(this.value)" class="w-full accent-cyan-500 bg-slate-950 cursor-pointer">
+                </div>
+            </div>
+
+            <!-- Security Admin Emergency Dispatcher (Conditional) -->
+            <div id="admin-panel"
+                class="hidden bg-red-950/20 border border-red-900/50 rounded-xl p-5 shadow-xl space-y-3">
+                <h2 class="text-sm font-semibold text-red-400 uppercase tracking-wider flex items-center">
+                    <i data-lucide="shield-alert" class="w-4 h-4 mr-2"></i> D2M Emergency Dispatch
+                </h2>
+                <p class="text-xs text-slate-400">Bypass internet congestion and broadcast directly via terrestrial
+                    towers.</p>
+                <select id="emergency-type" class="w-full bg-slate-950 border border-red-900/50 rounded-lg p-2 text-xs">
+                    <option>Medical Emergency / Ambulance Dispatch</option>
+                    <option>Security Breach / Campus Theft Alert</option>
+                    <option>Fire Hazard / Evacuation Notice</option>
+                </select>
+                <button onclick="dispatchD2M()"
+                    class="w-full bg-red-600 hover:bg-red-500 text-white text-xs font-bold py-2.5 rounded-lg transition flex items-center justify-center space-x-2">
+                    <i data-lucide="broadcast" class="w-4 h-4"></i>
+                    <span>Broadcast via D2M Wave</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- CENTER DISPLAY AREA -->
+        <section class="lg:col-span-3 space-y-6">
+
+            <!-- Top Telemetry Metrics Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                    <p class="text-xs text-slate-400 uppercase">Network Status</p>
+                    <p id="metric-status" class="text-lg font-bold text-emerald-400 mt-1">🟢 5G/6G Core Active</p>
+                    <span class="text-[10px] text-slate-500">Self-Healing AI Engine</span>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                    <p class="text-xs text-slate-400 uppercase">D2M Broadcast Channel</p>
+                    <p class="text-lg font-bold text-cyan-400 mt-1">Online (Zero Data)</p>
+                    <span class="text-[10px] text-slate-500">Terrestrial Wave Sync</span>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                    <p class="text-xs text-slate-400 uppercase">Average Latency</p>
+                    <p id="metric-latency" class="text-lg font-bold text-slate-100 mt-1">8 ms</p>
+                    <span class="text-[10px] text-emerald-400">Target &lt; 10ms (URLLC)</span>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                    <p class="text-xs text-slate-400 uppercase">Packet Loss Rate</p>
+                    <p id="metric-loss" class="text-lg font-bold text-slate-100 mt-1">0.1%</p>
+                    <span class="text-[10px] text-slate-500">Reliability Grade A</span>
+                </div>
+            </div>
+
+            <!-- Live Chart Card -->
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-xl" id="throughput-section">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-sm font-semibold text-slate-200 flex items-center">
+                        <i data-lucide="activity" class="w-4 h-4 mr-2 text-cyan-400"></i> Real-Time AI Network Cognition
+                        Throughput
+                    </h2>
+                    <span class="text-xs text-cyan-400 bg-cyan-950 px-2.5 py-1 rounded border border-cyan-800">Live
+                        Telemetry Feed</span>
+                </div>
+                <div class="h-72 w-full">
+                    <canvas id="throughputChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Bottom Row: Campus Zones & Toast Alert Feed -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl" id="campus-zones">
+                    <h2 class="text-sm font-semibold text-slate-200 mb-3 flex items-center">
+                        <i data-lucide="cpu" class="w-4 h-4 mr-2 text-cyan-400"></i> Campus Zone Cognition Status
+                    </h2>
+                    <ul class="space-y-2 text-xs text-slate-300">
+                        <li class="flex justify-between items-center p-2 bg-slate-950 rounded border border-slate-800">
+                            <span>🚑 Sector A (Medical / Ambulance Response)</span>
+                            <span class="text-emerald-400 font-semibold">Priority Tier 1 (D2M Active)</span>
+                        </li>
+                        <li class="flex justify-between items-center p-2 bg-slate-950 rounded border border-slate-800">
+                            <span>🛡️ Sector B (Hostels & Security Watch)</span>
+                            <span class="text-cyan-400 font-semibold">Secured (Load Balanced)</span>
+                        </li>
+                        <li class="flex justify-between items-center p-2 bg-slate-950 rounded border border-slate-800">
+                            <span>⚡ Sector C (Smart Microgrid Nodes)</span>
+                            <span class="text-cyan-400 font-semibold">Streaming Telemetry</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-sm font-semibold text-slate-200 mb-3 flex items-center">
+                            <i data-lucide="terminal" class="w-4 h-4 mr-2 text-cyan-400"></i> System Audit &
+                            Intelligence Log
+                        </h2>
+                        <div id="audit-log"
+                            class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-[11px] font-mono text-slate-400 h-28 overflow-y-auto space-y-1">
+                            <p class="text-emerald-400">[11:00:01] CognivNet core initialized across multi-campus
+                                umbrella network.</p>
+                            <p>[11:00:02] D2M terrestrial broadcast towers synchronized successfully.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <a class="footer-brand" href="#overview"><i data-lucide="radio"></i><span>COGNIVNET</span></a>
+        <p>Intelligent network cognition <span>·</span> built for every campus.</p>
+        <a class="footer-top" href="#overview">Back to top <i data-lucide="arrow-up-right"></i></a>
+    </footer>
+
+    <!-- PORTAL LOGIN & REGISTRATION MODAL -->
+    <div id="login-modal"
+        class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl relative space-y-5">
+            <button onclick="toggleModal('login-modal')"
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-100">&times;</button>
+            <div class="text-center">
+                <h3 class="text-lg font-bold text-cyan-400">CognivNet Portal Access</h3>
+                <p class="text-xs text-slate-400 mt-1">Select your access role or register a new campus node.</p>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs text-slate-400 block mb-1">Select Portal Role</label>
+                    <select id="modal-role"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-cyan-500">
+                        <option value="Student / Resident">Student / Resident</option>
+                        <option value="Campus Security Admin">Campus Security Admin</option>
+                        <option value="Umbrella Super Admin">Umbrella Super Admin</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 block mb-1">Campus Name</label>
+                    <input type="text" id="modal-campus-input" placeholder="e.g. AIT Smart Campus"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-cyan-500">
+                </div>
+                <button onclick="applyLogin()"
+                    class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2.5 rounded-lg text-sm transition">Sign
+                    In / Switch Role</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION POPUP -->
+    <div id="toast"
+        class="fixed bottom-6 right-6 bg-cyan-900/90 border border-cyan-500 text-cyan-100 px-4 py-3 rounded-xl shadow-2xl hidden transform translate-y-10 opacity-0 transition-all duration-300 flex items-center space-x-3 z-50">
+        <i data-lucide="bell" class="w-5 h-5 text-cyan-400"></i>
+        <span id="toast-msg" class="text-xs font-medium">Notification message here</span>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        lucide.createIcons();
+
+        // Chart Initialization
+        const ctx = document.getElementById('throughputChart').getContext('2d');
+        const throughputChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['12:01', '12:02', '12:03', '12:04', '12:05', '12:06'],
+                datasets: [
+                    {
+                        label: 'D2M Emergency Broadcast Channel',
+                        data: [45, 52, 48, 70, 85, 90],
+                        borderColor: '#c9b8a0',
+                        backgroundColor: 'rgba(201, 184, 160, 0.12)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'General Campus Data Slice',
+                        data: [120, 135, 110, 150, 140, 160],
+                        borderColor: '#786c5d',
+                        backgroundColor: 'rgba(120, 108, 93, 0.08)',
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#b4aa9d', font: { size: 11 } } } },
+                scales: {
+                    x: { grid: { color: 'rgba(201, 184, 160, 0.08)' }, ticks: { color: '#857d72' } },
+                    y: { grid: { color: 'rgba(201, 184, 160, 0.08)' }, ticks: { color: '#857d72' } }
+                }
+            }
+        });
+
+        function toggleModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.toggle('hidden');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = message;
+            toast.classList.remove('hidden', 'translate-y-10', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 4000);
+        }
+
+        function applyLogin() {
+            const role = document.getElementById('modal-role').value;
+            const campus = document.getElementById('modal-campus-input').value;
+
+            document.getElementById('current-role-label').innerText = role;
+            if (campus) {
+                const select = document.getElementById('campus-select');
+                let opt = document.createElement('option');
+                opt.value = campus;
+                opt.innerHTML = campus;
+                select.appendChild(opt);
+                select.value = campus;
+            }
+
+            const adminPanel = document.getElementById('admin-panel');
+            if (role === 'Campus Security Admin') {
+                adminPanel.classList.remove('hidden');
+            } else {
+                adminPanel.classList.add('hidden');
+            }
+
+            toggleModal('login-modal');
+            showToast(`Successfully logged in as ${role}!`);
+            logEvent(`User signed in with role: ${role}`);
+        }
+
+        function updateTraffic(val) {
+            document.getElementById('traffic-val').innerText = val + ' Mbps';
+        }
+
+        function triggerScenario() {
+            const scenario = document.getElementById('sim-scenario').value;
+            const statusLabel = document.getElementById('metric-status');
+            const latencyLabel = document.getElementById('metric-latency');
+            const lossLabel = document.getElementById('metric-loss');
+
+            if (scenario === 'emergency') {
+                statusLabel.innerText = "🟢 D2M Broadcast Active";
+                latencyLabel.innerText = "3 ms";
+                lossLabel.innerText = "0.0% (URLLC Sliced)";
+                showToast("Emergency D2M state triggered! Zero-internet broadcasting online.");
+                logEvent("ALERT: Emergency scenario triggered. High-priority D2M spectrum engaged.");
+            } else if (scenario === 'outage') {
+                statusLabel.innerText = "🔴 Primary Tower Down";
+                latencyLabel.innerText = "42 ms";
+                lossLabel.innerText = "1.8% (Failover Mesh)";
+                showToast("Simulated tower failure! AI routing traffic to backup mesh.");
+                logEvent("WARNING: 5G primary tower outage detected. AI failover protocol active.");
+            } else if (scenario === 'congestion') {
+                statusLabel.innerText = "🟡 High Traffic State";
+                latencyLabel.innerText = "24 ms";
+                lossLabel.innerText = "0.6% (Load Balanced)";
+                showToast("Campus mega event congestion simulated.");
+                logEvent("INFO: Traffic surge detected across campus nodes.");
+            } else {
+                statusLabel.innerText = "🟢 5G/6G Core Active";
+                latencyLabel.innerText = "8 ms";
+                lossLabel.innerText = "0.1% (Optimal)";
+                showToast("Network returned to normal stable state.");
+                logEvent("INFO: Network normalized.");
+            }
+        }
+
+        function dispatchD2M() {
+            const type = document.getElementById('emergency-type').value;
+            showToast(`SUCCESS: ${type} broadcasted via terrestrial D2M towers!`);
+            logEvent(`D2M DISPATCH: ${type} pushed to mobile devices without internet dependency.`);
+        }
+
+        function logEvent(text) {
+            const logBox = document.getElementById('audit-log');
+            const time = new Date().toLocaleTimeString();
+            const p = document.createElement('p');
+            p.innerText = `[${time}] ${text}`;
+            logBox.prepend(p);
+        }
+    </script>
+</body>
+
+</html>
