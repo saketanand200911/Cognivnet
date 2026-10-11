@@ -274,6 +274,11 @@ async function sendBroadcast(messageOverride, typeOverride) {
 
 function triggerScenario() {
     const scenario = document.getElementById("sim-scenario").value;
+    
+    const healthMap = { normal: "ok", congestion: "warn", emergency: "warn", outage: "bad" };
+    document.body.dataset.scenario = scenario;
+    document.body.dataset.health = healthMap[scenario] || "ok";
+
     const statusLabel = document.getElementById("metric-status");
     const latencyLabel = document.getElementById("metric-latency");
     const lossLabel = document.getElementById("metric-loss");
