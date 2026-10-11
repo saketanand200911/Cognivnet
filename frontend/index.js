@@ -4,6 +4,13 @@ let campusStream;
 let toastTimeout;
 let broadcastInProgress = false;
 
+function getApiUrl(path) {
+    const apiOrigin = window.location.port === "5500"
+        ? "http://127.0.0.1:4173"
+        : window.location.origin;
+    return new URL(path, `${apiOrigin}/`).href;
+}
+
 if (window.lucide) {
     lucide.createIcons();
 }
@@ -55,7 +62,7 @@ async function loadBroadcastHistory() {
     historyStatus.hidden = false;
 
     try {
-        const response = await fetch("/api/broadcasts/history", {
+        const response = await fetch(getApiUrl("/api/broadcasts/history"), {
             headers: { Accept: "application/json" },
         });
         const result = await response.json();
@@ -279,7 +286,7 @@ function connectToCampusStream() {
     }
 
     const params = new URLSearchParams({ campus: getSelectedCampus() });
-    campusStream = new EventSource(`/api/broadcasts/stream?${params}`);
+    campusStream = new EventSource(getApiUrl(`/api/broadcasts/stream?${params}`));
     campusStream.addEventListener("open", () => {
         status.textContent = "Live connection";
         status.dataset.state = "connected";
@@ -310,7 +317,7 @@ async function refreshAudienceCount() {
 
     const params = new URLSearchParams({ campus: getSelectedCampus() });
     try {
-        const response = await fetch(`/api/broadcasts/audience?${params}`, {
+        const response = await fetch(getApiUrl(`/api/broadcasts/audience?${params}`), {
             headers: { Accept: "application/json" },
         });
         if (!response.ok) {
@@ -369,7 +376,7 @@ async function sendBroadcast(messageOverride, typeOverride) {
     status.textContent = "Sending to connected campus sessions…";
     status.dataset.state = "sending";
     try {
-        const response = await fetch("/api/broadcasts", {
+        const response = await fetch(getApiUrl("/api/broadcasts"), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

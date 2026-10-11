@@ -49,7 +49,7 @@ cd IMC
 
 The campus broadcast panel sends announcements, important alerts, and emergencies to dashboard sessions currently connected to the same campus. It uses the included Node.js server and requires Node.js 18 or newer; no extra packages are needed.
 
-To preview the dashboard with VS Code Live Server, open `frontend/index.html`. The emergency dispatcher is visible there, but sending requires the API server below; Live Server by itself only serves static files.
+To preview the dashboard with VS Code Live Server, open `frontend/index.html`. Start the API server below in a terminal as well. The frontend automatically connects from Live Server's default port 5500 to the API on port 4173, including live sessions, sending, audience counts, and broadcast history.
 
 From the repository root, start the server with a private administrator key:
 

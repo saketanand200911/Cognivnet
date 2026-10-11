@@ -10,6 +10,10 @@ const port = Number(process.env.PORT || 4173);
 const adminToken = process.env.ADMIN_BROADCAST_TOKEN || "";
 const maxMessageBytes = 8 * 1024;
 const maxBroadcastsPerMinute = 20;
+const allowedFrontendOrigins = new Set([
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
+]);
 const connectedSessions = new Map();
 const rateLimits = new Map();
 let historyWrite = Promise.resolve();
@@ -28,6 +32,24 @@ function sendJson(response, status, payload) {
         "X-Content-Type-Options": "nosniff",
     });
     response.end(JSON.stringify(payload));
+}
+
+function applyApiCors(request, response) {
+    const origin = request.headers.origin;
+    if (!origin) {
+        return true;
+    }
+    if (!allowedFrontendOrigins.has(origin)) {
+        sendJson(response, 403, { error: "This frontend origin is not allowed to access the broadcast API." });
+        return false;
+    }
+
+    response.setHeader("Access-Control-Allow-Origin", origin);
+    response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    response.setHeader("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type");
+    response.setHeader("Access-Control-Max-Age", "600");
+    response.setHeader("Vary", "Origin");
+    return true;
 }
 
 function getCampus(value) {
@@ -180,6 +202,17 @@ const server = createServer(async (request, response) => {
     } catch {
         sendJson(response, 400, { error: "Invalid request URL." });
         return;
+    }
+
+    if (url.pathname.startsWith("/api/")) {
+        if (!applyApiCors(request, response)) {
+            return;
+        }
+        if (request.method === "OPTIONS") {
+            response.writeHead(204);
+            response.end();
+            return;
+        }
     }
 
     if (request.method === "GET" && url.pathname === "/api/health") {
