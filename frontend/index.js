@@ -3,6 +3,8 @@ const announcementLimit = 4;
 let campusStream;
 let toastTimeout;
 let broadcastInProgress = false;
+let weatherMonitorStatus = null;
+let weatherMonitorRequestInProgress = false;
 
 function getApiUrl(path) {
     const apiOrigin = window.location.port === "5500"
@@ -31,24 +33,48 @@ function initializePageNavigation() {
 }
 
 function updateCurrentPage() {
+    const requestedAdminPage = window.location.hash === "#admin-broadcast";
+    const isAdmin = adminRoles.has(document.getElementById("current-role-label").textContent);
+    if (requestedAdminPage && !isAdmin) {
+        window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#overview`);
+    }
+    const isAdminPage = requestedAdminPage && isAdmin;
     const isHistoryPage = window.location.hash === "#broadcast-history";
     const dashboardView = document.getElementById("dashboard-view");
     const historyView = document.getElementById("broadcast-history-view");
+    const adminBroadcastView = document.getElementById("admin-broadcast-view");
+    const adminPanel = document.getElementById("admin-panel");
     const historyLink = document.getElementById("history-nav-link");
     const dashboardLink = document.getElementById("dashboard-nav-link");
+    const adminBroadcastLink = document.getElementById("admin-broadcast-nav-link");
 
-    dashboardView.hidden = isHistoryPage;
+    dashboardView.hidden = isHistoryPage || isAdminPage;
     historyView.hidden = !isHistoryPage;
-    document.body.dataset.view = isHistoryPage ? "history" : "dashboard";
-    document.title = isHistoryPage ? "Broadcast History — CognivNet" : "CognivNet — Umbrella Campus & D2M Hub";
+    adminBroadcastView.hidden = !isAdminPage;
+    document.body.dataset.view = isHistoryPage ? "history" : isAdminPage ? "admin-broadcast" : "dashboard";
+    document.title = isHistoryPage
+        ? "Broadcast History — CognivNet"
+        : isAdminPage
+            ? "Admin Broadcasts — CognivNet"
+            : "CognivNet — Umbrella Campus & D2M Hub";
 
     if (isHistoryPage) {
         historyLink.setAttribute("aria-current", "page");
         dashboardLink.removeAttribute("aria-current");
+        adminBroadcastLink.removeAttribute("aria-current");
+        adminPanel.hidden = true;
         loadBroadcastHistory();
+    } else if (isAdminPage) {
+        adminBroadcastLink.setAttribute("aria-current", "page");
+        dashboardLink.removeAttribute("aria-current");
+        historyLink.removeAttribute("aria-current");
+        adminPanel.hidden = false;
+        refreshWeatherMonitorStatus();
     } else {
         dashboardLink.setAttribute("aria-current", "page");
         historyLink.removeAttribute("aria-current");
+        adminBroadcastLink.removeAttribute("aria-current");
+        adminPanel.hidden = true;
     }
 }
 
@@ -130,7 +156,9 @@ function initializeDashboard() {
     initializeChart();
     connectToCampusStream();
     refreshAudienceCount();
+    refreshWeatherMonitorStatus();
     window.setInterval(refreshAudienceCount, 15000);
+    window.setInterval(refreshWeatherMonitorStatus, 30000);
 }
 
 function initializeChart() {
@@ -235,6 +263,7 @@ function applyLogin() {
     }
 
     updateBroadcastAccess();
+    updateCurrentPage();
     status.textContent = adminRoles.has(role)
         ? "Enter the administrator key configured on the broadcast server."
         : "Sending is locked until you sign in with an administrator role.";
@@ -247,17 +276,25 @@ function applyLogin() {
 function updateBroadcastAccess() {
     const role = document.getElementById("current-role-label").textContent;
     const isAdmin = adminRoles.has(role);
+    const adminPanel = document.getElementById("admin-panel");
+    const adminBroadcastLink = document.getElementById("admin-broadcast-nav-link");
     const message = document.getElementById("broadcast-access-message");
     const signInButton = document.getElementById("broadcast-sign-in");
 
+    adminPanel.hidden = !isAdmin;
+    adminBroadcastLink.hidden = !isAdmin;
     message.textContent = isAdmin
-        ? "Administrator role selected. Enter the server key to authorize sending."
-        : "Sign in with an administrator role to enable emergency dispatch.";
+        ? "Administrator role selected. Enter the server key to authorize broadcasts and emergency alerts."
+        : "Sign in with an administrator role to access broadcast and emergency controls.";
     signInButton.classList.toggle("hidden", isAdmin);
     document.querySelectorAll("#send-broadcast, .emergency-send").forEach((button) => {
         button.disabled = !isAdmin || broadcastInProgress;
     });
-
+    if (!isAdmin) {
+        adminPanel.hidden = true;
+    } else {
+        adminPanel.hidden = window.location.hash !== "#admin-broadcast";
+    }
 }
 
 function updateTraffic(value) {
@@ -270,11 +307,109 @@ function updateCampus() {
     }
     connectToCampusStream();
     refreshAudienceCount();
+    if (window.location.hash === "#admin-broadcast") {
+        refreshWeatherMonitorStatus();
+    }
     logEvent(`Active network changed to ${getSelectedCampus()}.`);
 }
 
 function getSelectedCampus() {
     return document.getElementById("campus-select").value.trim();
+}
+
+async function refreshWeatherMonitorStatus() {
+    const state = document.getElementById("weather-monitor-state");
+    const detail = document.getElementById("weather-monitor-detail");
+    const button = document.getElementById("weather-monitor-toggle");
+    if (!state || !detail || !button || window.location.hash !== "#admin-broadcast"
+        || window.location.protocol === "file:") {
+        return;
+    }
+
+    try {
+        const response = await fetch(getApiUrl("/api/weather/monitor"), {
+            headers: { Accept: "application/json" },
+        });
+        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.error || `Weather status request failed with status ${response.status}.`);
+        }
+        weatherMonitorStatus = result;
+        state.textContent = result.enabled ? "Monitoring active" : "Monitoring off";
+        state.dataset.state = result.enabled ? "active" : "inactive";
+        const location = result.location || "configured location";
+        const activeHazards = Array.isArray(result.activeHazards)
+            ? result.activeHazards.map((hazard) => hazard.description).join("; ")
+            : "";
+        detail.textContent = !result.configured
+            ? `${location}. Set GOOGLE_WEATHER_API_KEY on the server to enable weather checks.`
+            : result.lastError
+                ? `Weather check failed: ${result.lastError}`
+                : result.enabled
+                    ? `${location}. Alerts route to ${result.campus}. ${activeHazards ? `Active hazard: ${activeHazards}` : "No threshold currently exceeded."}${result.lastCheckedAt ? ` Last checked ${new Date(result.lastCheckedAt).toLocaleTimeString()}.` : " First check in progress."}`
+                    : `${location}. Monitoring runs on the server while enabled and resets when the server restarts.`;
+        button.textContent = result.enabled ? "Disable weather monitoring" : "Enable weather monitoring";
+        button.disabled = !result.configured || weatherMonitorRequestInProgress;
+        button.title = result.configured ? "" : "Set GOOGLE_WEATHER_API_KEY on the server first.";
+    } catch (error) {
+        weatherMonitorStatus = null;
+        state.textContent = "Status unavailable";
+        state.dataset.state = "error";
+        detail.textContent = error instanceof Error ? error.message : "Could not load weather monitoring status.";
+        button.disabled = true;
+        console.error("Could not load weather monitoring status:", error);
+    }
+}
+
+async function toggleWeatherMonitor() {
+    const status = document.getElementById("broadcast-status");
+    const tokenInput = document.getElementById("broadcast-token");
+    const button = document.getElementById("weather-monitor-toggle");
+    const token = tokenInput.value.trim();
+    if (!token) {
+        status.textContent = "Enter the administrator key to control weather monitoring.";
+        status.dataset.state = "error";
+        tokenInput.focus();
+        return;
+    }
+    if (!weatherMonitorStatus) {
+        status.textContent = "Weather monitoring status is unavailable. Try again when the server is connected.";
+        status.dataset.state = "error";
+        return;
+    }
+
+    const enabled = !weatherMonitorStatus.enabled;
+    weatherMonitorRequestInProgress = true;
+    button.disabled = true;
+    status.textContent = enabled ? "Enabling automatic weather alerts…" : "Disabling automatic weather alerts…";
+    status.dataset.state = "sending";
+    try {
+        const response = await fetch(getApiUrl("/api/weather/monitor"), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ enabled, campus: getSelectedCampus() }),
+        });
+        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.error || `Weather monitoring request failed with status ${response.status}.`);
+        }
+        weatherMonitorStatus = result;
+        status.textContent = enabled
+            ? "Automatic weather alerts enabled for the selected campus."
+            : "Automatic weather alerts disabled.";
+        status.dataset.state = "success";
+        tokenInput.value = "";
+    } catch (error) {
+        status.textContent = error instanceof Error ? error.message : "Could not update weather monitoring.";
+        status.dataset.state = "error";
+        console.error("Could not update weather monitoring:", error);
+    } finally {
+        weatherMonitorRequestInProgress = false;
+        await refreshWeatherMonitorStatus();
+    }
 }
 
 function connectToCampusStream() {

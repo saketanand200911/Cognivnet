@@ -39,6 +39,7 @@
             <a href="#throughput-section">02. Telemetry</a>
             <a href="#campus-zones">03. Campus zones</a>
             <a id="history-nav-link" href="#broadcast-history">04. Broadcast history</a>
+            <a id="admin-broadcast-nav-link" href="#admin-broadcast" hidden>05. Admin broadcasts</a>
         </nav>
         <div class="flex items-center space-x-4">
             <div id="auth-badge"
@@ -162,72 +163,6 @@
                 </div>
             </div>
 
-            <!-- Emergency dispatcher is visible to all users; sending requires an administrator role. -->
-            <section id="admin-panel" class="broadcast-panel rounded-xl p-5 shadow-xl space-y-4"
-                aria-labelledby="broadcast-heading">
-                <span class="form-corner form-corner-top-left" aria-hidden="true"></span>
-                <span class="form-corner form-corner-top-right" aria-hidden="true"></span>
-                <span class="form-corner form-corner-bottom-left" aria-hidden="true"></span>
-                <span class="form-corner form-corner-bottom-right" aria-hidden="true"></span>
-                <div>
-                    <h2 id="broadcast-heading" class="text-sm font-semibold uppercase tracking-wider flex items-center">
-                        <i data-lucide="siren" class="w-4 h-4 mr-2"></i> Emergency &amp; Campus Broadcast
-                    </h2>
-                    <p class="mt-2 text-xs text-slate-400">Send an announcement or urgent alert to connected dashboard
-                        sessions in this campus.</p>
-                </div>
-                <div class="broadcast-access" role="status">
-                    <p id="broadcast-access-message">Sign in with an administrator role to enable emergency dispatch.
-                    </p>
-                    <button id="broadcast-sign-in" type="button" onclick="toggleModal('login-modal')">
-                        Sign in to enable dispatch
-                    </button>
-                </div>
-                <div class="audience-status" aria-live="polite">
-                    <span class="audience-indicator"></span>
-                    <span><strong id="audience-count">—</strong> live sessions</span>
-                    <span id="broadcast-connection">Connecting…</span>
-                </div>
-                <label class="broadcast-label" for="broadcast-type">Message type</label>
-                <select id="broadcast-type"
-                    class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm">
-                    <option value="announcement">Announcement</option>
-                    <option value="alert">Important alert</option>
-                    <option value="emergency">Emergency</option>
-                </select>
-                <label class="broadcast-label" for="broadcast-message">Custom broadcast message</label>
-                <textarea id="broadcast-message" rows="4" maxlength="500" required
-                    placeholder="Type the message campus users should see…"
-                    class="broadcast-message w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm"></textarea>
-                <label class="broadcast-label" for="broadcast-token">Administrator key</label>
-                <input id="broadcast-token" type="password" autocomplete="off" spellcheck="false"
-                    placeholder="Enter the key configured on the broadcast server"
-                    class="broadcast-message w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm">
-                <p id="broadcast-status" class="broadcast-status" role="status" aria-live="polite">
-                    Sending is locked until you sign in with an administrator role.
-                </p>
-                <button id="send-broadcast" type="button" onclick="sendBroadcast()"
-                    class="broadcast-send w-full text-white text-xs font-bold py-3 rounded-lg transition flex items-center justify-center space-x-2"
-                    disabled>
-                    <i data-lucide="send" class="w-4 h-4"></i>
-                    <span>Send to this campus</span>
-                </button>
-                <div class="emergency-tools">
-                    <label class="broadcast-label" for="emergency-type">Emergency category</label>
-                    <select id="emergency-type"
-                        class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs">
-                        <option>Medical Emergency / Ambulance Dispatch</option>
-                        <option>Security Breach / Campus Theft Alert</option>
-                        <option>Fire Hazard / Evacuation Notice</option>
-                    </select>
-                    <button type="button" onclick="dispatchD2M()"
-                        class="emergency-send w-full text-white text-xs font-bold py-2.5 rounded-lg transition flex items-center justify-center space-x-2"
-                        disabled>
-                        <i data-lucide="siren" class="w-4 h-4"></i>
-                        <span>Send emergency alert</span>
-                    </button>
-                </div>
-            </section>
         </aside>
 
         <!-- CENTER DISPLAY AREA -->
@@ -336,6 +271,100 @@
             </p>
             <ol id="broadcast-history" class="history-list" aria-label="Broadcasts, newest first"></ol>
         </section>
+    </main>
+
+    <main id="admin-broadcast-view" class="admin-broadcast-main" hidden>
+        <div class="admin-broadcast-page-heading">
+            <p class="history-eyebrow"><i data-lucide="radio-tower" aria-hidden="true"></i> ADMINISTRATION</p>
+            <h2>Campus broadcasts</h2>
+            <p>Manage campus announcements and emergency alerts for the selected network.</p>
+        </div>
+        <section id="admin-panel" class="broadcast-panel rounded-xl p-5 shadow-xl space-y-4"
+            aria-label="Administrator communication controls" hidden>
+            <span class="form-corner form-corner-top-left" aria-hidden="true"></span>
+            <span class="form-corner form-corner-top-right" aria-hidden="true"></span>
+            <span class="form-corner form-corner-bottom-left" aria-hidden="true"></span>
+            <span class="form-corner form-corner-bottom-right" aria-hidden="true"></span>
+            <div class="broadcast-access" role="status">
+                <p id="broadcast-access-message">Administrator role selected. Enter the server key to authorize dispatch.</p>
+                <button id="broadcast-sign-in" type="button" onclick="toggleModal('login-modal')" class="hidden">
+                    Sign in to enable dispatch
+                </button>
+            </div>
+            <div class="admin-communication-sections">
+                <section class="admin-communication-section campus-broadcast-section"
+                    aria-labelledby="campus-broadcast-heading">
+                    <div class="admin-communication-heading">
+                        <h2 id="campus-broadcast-heading">Campus broadcast</h2>
+                        <p>Send announcements and important alerts to connected sessions in this campus.</p>
+                    </div>
+                    <div class="audience-status" aria-live="polite">
+                        <span class="audience-indicator"></span>
+                        <span><strong id="audience-count">—</strong> live sessions</span>
+                        <span id="broadcast-connection">Connecting…</span>
+                    </div>
+                    <label class="broadcast-label" for="broadcast-type">Message type</label>
+                    <select id="broadcast-type"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm">
+                        <option value="announcement">Announcement</option>
+                        <option value="alert">Important alert</option>
+                        <option value="emergency">Emergency</option>
+                    </select>
+                    <label class="broadcast-label" for="broadcast-message">Custom broadcast message</label>
+                    <textarea id="broadcast-message" rows="4" maxlength="500" required
+                        placeholder="Type the message campus users should see…"
+                        class="broadcast-message w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm"></textarea>
+                    <label class="broadcast-label" for="broadcast-token">Administrator key</label>
+                    <input id="broadcast-token" type="password" autocomplete="off" spellcheck="false"
+                        placeholder="Enter the key configured on the broadcast server"
+                        class="broadcast-message w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm">
+                    <p id="broadcast-status" class="broadcast-status" role="status" aria-live="polite">
+                        Enter the administrator key to authorize sending.
+                    </p>
+                    <button id="send-broadcast" type="button" onclick="sendBroadcast()"
+                        class="broadcast-send w-full text-white text-xs font-bold py-3 rounded-lg transition flex items-center justify-center space-x-2"
+                        disabled>
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                        <span>Send to this campus</span>
+                    </button>
+                </section>
+                <section class="admin-communication-section emergency-broadcast-section"
+                    aria-labelledby="emergency-broadcast-heading">
+                    <div class="admin-communication-heading">
+                        <h2 id="emergency-broadcast-heading">Emergency alerts</h2>
+                        <p>Send an urgent safety alert or enable automatic weather-triggered alerts.</p>
+                    </div>
+                    <div class="weather-monitor" aria-labelledby="weather-monitor-heading">
+                        <div class="weather-monitor-header">
+                            <h3 id="weather-monitor-heading">Automatic weather alerts</h3>
+                            <span id="weather-monitor-state" class="weather-monitor-state" role="status">Checking server…</span>
+                        </div>
+                        <p id="weather-monitor-detail">Monitor extreme weather for Ghaziabad, Uttar Pradesh. Alerts are sent to the selected campus.</p>
+                        <p class="weather-monitor-thresholds">Triggers: thunderstorm ≥70%, gust ≥60 km/h, rain ≥25 mm/hour, heat ≥45°C, or cold ≤0°C. Checks every 15 minutes.</p>
+                        <button id="weather-monitor-toggle" class="weather-monitor-toggle" type="button"
+                            onclick="toggleWeatherMonitor()" disabled>Enable weather monitoring</button>
+                    </div>
+                    <div class="emergency-tools">
+                        <label class="broadcast-label" for="emergency-type">Emergency category</label>
+                        <select id="emergency-type"
+                            class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs">
+                            <option>Medical Emergency / Ambulance Dispatch</option>
+                            <option>Security Breach / Campus Theft Alert</option>
+                            <option>Fire Hazard / Evacuation Notice</option>
+                        </select>
+                        <button type="button" onclick="dispatchD2M()"
+                            class="emergency-send w-full text-white text-xs font-bold py-2.5 rounded-lg transition flex items-center justify-center space-x-2"
+                            disabled>
+                            <i data-lucide="siren" class="w-4 h-4"></i>
+                            <span>Send emergency alert</span>
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </section>
+        <p id="admin-broadcast-access-denied" class="admin-broadcast-access-denied" role="status" hidden>
+            Sign in with an administrator role to view and manage broadcasts.
+        </p>
     </main>
 
     <footer class="site-footer">

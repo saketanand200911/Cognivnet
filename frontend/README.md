@@ -51,6 +51,8 @@ The campus broadcast panel sends announcements, important alerts, and emergencie
 
 To preview the dashboard with VS Code Live Server, open `frontend/index.html`. Start the API server below in a terminal as well. The frontend automatically connects from Live Server's default port 5500 to the API on port 4173, including live sessions, sending, audience counts, and broadcast history.
 
+After selecting an administrator role in the portal dialog, use **05. Admin broadcasts** in the top navigation to open the dedicated campus-broadcast and emergency-alert page. This navigation and its controls are hidden from the Student / Resident view.
+
 From the repository root, start the server with a private administrator key:
 
 ```bash
@@ -64,3 +66,26 @@ Type custom text in **Custom broadcast message**. Use **Emergency category** and
 Select **04. Broadcast history** in the dashboard navigation to browse archived broadcasts across all campuses, newest first. The server appends each accepted broadcast to `backend/broadcast-history.jsonl`, which is kept locally and excluded from Git. History recording starts when this feature is installed; broadcasts sent before then cannot be recovered.
 
 Broadcasts only reach connected dashboard sessions for the selected campus. The recipient count represents connected sessions, not enrolled people or devices. Offline users and physical devices do not receive these messages. Despite the D2M-themed prototype UI, this web server is not a cellular/D2M transmitter and cannot deliver without internet connectivity. Production use needs campus identity-provider authentication, HTTPS, and an integrated push-notification or telecom delivery provider for mobile and offline users.
+
+## Automatic weather emergency broadcasts
+
+The admin panel can enable server-side Google Weather monitoring. It checks current conditions and the next 24 forecast hours every 15 minutes and sends an emergency broadcast when one of these thresholds is reached: thunderstorm probability at least 70%, wind gust at least 60 km/h, forecast rain at least 25 mm/hour, temperature at least 45°C, or temperature at or below 0°C. A given hazard is sent once while it remains active; it can alert again after it clears and later becomes active again. Weather emergencies are archived and delivered to connected sessions just like other broadcasts.
+
+The API key must be configured only in the backend process, never in frontend code or a committed file. The key previously pasted into chat should be considered exposed: revoke/rotate it in Google Cloud, enable the Weather API for the project, and restrict the replacement key to that API. Start the server with environment variables:
+
+```bash
+ADMIN_BROADCAST_TOKEN='replace-with-a-long-random-secret' \
+GOOGLE_WEATHER_API_KEY='your-rotated-weather-api-key' \
+node backend/server.js
+```
+
+The default coordinates are an approximate Ghaziabad city location, not verified coordinates for Hi-Tech Institute of Technology. For more accurate campus alerts, set `WEATHER_LATITUDE` and `WEATHER_LONGITUDE` to the institute's confirmed coordinates before starting the server:
+
+```bash
+WEATHER_LATITUDE='28.000000' WEATHER_LONGITUDE='77.000000' \
+ADMIN_BROADCAST_TOKEN='replace-with-a-long-random-secret' \
+GOOGLE_WEATHER_API_KEY='your-rotated-weather-api-key' \
+node backend/server.js
+```
+
+Enter the server's administrator key in the dashboard's **Administrator key** field, then use **Enable weather monitoring**. This toggle is authorized directly by the server key and does not depend on the demo portal-role selector. Monitoring continues if the page closes, but it is in memory and resets when the server restarts; enable it again after a restart. An API/configuration error is shown in the panel, and no alert is generated when a weather check fails.

@@ -1387,7 +1387,56 @@ textarea {
 [hidden] { display: none !important; }
 
 body[data-view="history"] #live-broadcast-banner,
-body[data-view="history"] .site-footer { display: none !important; }
+body[data-view="history"] .site-footer,
+body[data-view="admin-broadcast"] #live-broadcast-banner,
+body[data-view="admin-broadcast"] .site-footer { display: none !important; }
+
+.admin-broadcast-main {
+    position: relative;
+    z-index: 0;
+    width: min(100% - 3rem, 1120px);
+    margin: 0 auto;
+    padding: clamp(2.5rem, 7vw, 6rem) 0;
+}
+
+.admin-broadcast-page-heading {
+    max-width: 760px;
+    margin-bottom: 2rem;
+}
+
+.admin-broadcast-page-heading h2 {
+    margin: 1rem 0 0.65rem;
+    color: var(--forest);
+    font-family: "Space Grotesk", sans-serif;
+    font-size: clamp(3rem, 7vw, 5.5rem);
+    font-weight: 700;
+    letter-spacing: -0.08em;
+    line-height: 0.9;
+}
+
+.admin-broadcast-page-heading > p:last-child {
+    color: var(--grid);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    line-height: 1.8;
+}
+
+.admin-broadcast-main #admin-panel {
+    width: 100%;
+    padding: clamp(1rem, 3vw, 2rem) !important;
+}
+
+.admin-broadcast-main .admin-communication-sections {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-broadcast-access-denied {
+    padding: 1rem;
+    border: 1px solid rgba(58, 58, 56, 0.2);
+    color: var(--grid);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+}
 
 #auth-badge {
     border: 1px solid rgba(26, 60, 43, 0.2) !important;
@@ -1745,6 +1794,38 @@ main > section > div:nth-child(1) > div > span {
     background: var(--paper) !important;
 }
 
+.admin-communication-sections {
+    display: grid;
+    gap: 1px;
+    border: 1px solid rgba(58, 58, 56, 0.2);
+    background: rgba(58, 58, 56, 0.2);
+}
+
+.admin-communication-section {
+    display: grid;
+    align-content: start;
+    gap: 0.85rem;
+    padding: 1rem;
+    background: var(--paper);
+}
+
+.admin-communication-heading h2 {
+    color: var(--forest);
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.admin-communication-heading p {
+    margin-top: 0.4rem;
+    color: rgba(58, 58, 56, 0.75);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9px;
+    line-height: 1.6;
+}
+
 .form-corner {
     position: absolute;
     z-index: 1;
@@ -1760,6 +1841,83 @@ main > section > div:nth-child(1) > div > span {
 
 #admin-panel h2,
 #admin-panel h2 [data-lucide] { color: var(--forest) !important; }
+
+.weather-monitor {
+    padding: 0.9rem;
+    border: 1px solid rgba(58, 58, 56, 0.24);
+    background: #fff;
+}
+
+.weather-monitor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.weather-monitor-header h3,
+.weather-monitor-state,
+.weather-monitor p,
+.weather-monitor-toggle {
+    font-family: "JetBrains Mono", monospace;
+}
+
+.weather-monitor-header h3 {
+    color: var(--forest);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.weather-monitor-state {
+    flex: 0 0 auto;
+    padding: 0.25rem 0.4rem;
+    border: 1px solid rgba(58, 58, 56, 0.22);
+    color: var(--grid);
+    font-size: 8px;
+    text-transform: uppercase;
+}
+
+.weather-monitor-state[data-state="active"] {
+    border-color: rgba(26, 60, 43, 0.4);
+    color: var(--forest);
+}
+
+.weather-monitor-state[data-state="error"] { color: #a3412d; }
+
+.weather-monitor p {
+    margin-top: 0.55rem;
+    color: var(--grid);
+    font-size: 9px;
+    line-height: 1.65;
+}
+
+.weather-monitor .weather-monitor-thresholds {
+    color: rgba(58, 58, 56, 0.72);
+    font-size: 8px;
+}
+
+.weather-monitor-toggle {
+    width: 100%;
+    min-height: 36px;
+    margin-top: 0.75rem;
+    border: 1px solid var(--forest);
+    background: var(--paper);
+    color: var(--forest);
+    cursor: pointer;
+    font-size: 9px;
+    text-transform: uppercase;
+}
+
+.weather-monitor-toggle:hover:not(:disabled) {
+    background: rgba(158, 255, 191, 0.25);
+}
+
+.weather-monitor-toggle:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
 
 #admin-panel > div:first-child > p,
 #broadcast-access-message,
@@ -2072,6 +2230,8 @@ main.history-main > .history-section > .history-toolbar > div {
     .site-header button { padding: 0.55rem !important; font-size: 8px !important; }
     .main-nav { flex-wrap: wrap; }
     .main-nav a { font-size: 8px; }
+    .admin-broadcast-main { width: min(100% - 1.5rem, 1120px); }
+    .admin-broadcast-main .admin-communication-sections { grid-template-columns: 1fr; }
 
     main:not(.history-main) {
         width: min(100% - 1.25rem, 1380px) !important;

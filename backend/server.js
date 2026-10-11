@@ -8,8 +8,12 @@ const broadcastHistoryPath = path.join(__dirname, "broadcast-history.jsonl");
 const host = process.env.HOST || "127.0.0.1";
 const port = Number(process.env.PORT || 4173);
 const adminToken = process.env.ADMIN_BROADCAST_TOKEN || "";
+const googleWeatherApiKey = process.env.GOOGLE_WEATHER_API_KEY || "";
+const weatherLatitude = Number(process.env.WEATHER_LATITUDE || "28.6711527");
+const weatherLongitude = Number(process.env.WEATHER_LONGITUDE || "77.4120356");
 const maxMessageBytes = 8 * 1024;
 const maxBroadcastsPerMinute = 20;
+const weatherPollIntervalMs = 15 * 60 * 1000;
 const allowedFrontendOrigins = new Set([
     "http://127.0.0.1:5500",
     "http://localhost:5500",
@@ -17,6 +21,15 @@ const allowedFrontendOrigins = new Set([
 const connectedSessions = new Map();
 const rateLimits = new Map();
 let historyWrite = Promise.resolve();
+const weatherMonitor = {
+    enabled: false,
+    campus: null,
+    interval: null,
+    lastCheckedAt: null,
+    lastError: null,
+    activeHazards: new Map(),
+    checkInProgress: false,
+};
 
 const staticFiles = new Map([
     ["/", ["index.html", "text/html; charset=utf-8"]],
@@ -166,6 +179,212 @@ function publishBroadcast(campus, broadcast) {
     return deliveredSessions;
 }
 
+async function createBroadcast(campus, type, message) {
+    const broadcast = {
+        id: randomUUID(),
+        campus,
+        type,
+        message,
+        createdAt: new Date().toISOString(),
+    };
+    await archiveBroadcast(broadcast);
+    const deliveredSessions = publishBroadcast(campus, broadcast);
+    console.info(`Campus ${type} broadcast ${broadcast.id} sent to ${deliveredSessions} connected session(s).`);
+    return { broadcast, deliveredSessions };
+}
+
+function getWeatherMonitorStatus() {
+    return {
+        enabled: weatherMonitor.enabled,
+        configured: Boolean(googleWeatherApiKey),
+        campus: weatherMonitor.campus,
+        location: "Ghaziabad, Uttar Pradesh (city-level coordinates)",
+        lastCheckedAt: weatherMonitor.lastCheckedAt,
+        lastError: weatherMonitor.lastError,
+        activeHazards: [...weatherMonitor.activeHazards.values()],
+    };
+}
+
+async function fetchGoogleWeather(pathname) {
+    const weatherUrl = new URL(`https://weather.googleapis.com/v1/${pathname}`);
+    weatherUrl.searchParams.set("key", googleWeatherApiKey);
+    weatherUrl.searchParams.set("location.latitude", String(weatherLatitude));
+    weatherUrl.searchParams.set("location.longitude", String(weatherLongitude));
+    weatherUrl.searchParams.set("unitsSystem", "METRIC");
+    if (pathname === "forecast/hours:lookup") {
+        weatherUrl.searchParams.set("pageSize", "24");
+    }
+
+    const response = await fetch(weatherUrl, { signal: AbortSignal.timeout(10_000) });
+    if (!response.ok) {
+        const responseText = await response.text();
+        let errorMessage = "";
+        try {
+            errorMessage = JSON.parse(responseText)?.error?.message || "";
+        } catch {
+            errorMessage = "";
+        }
+        const safeMessage = errorMessage
+            .replaceAll(googleWeatherApiKey, "[redacted]")
+            .replace(/\s+/g, " ")
+            .slice(0, 240);
+        throw new Error(
+            `Google Weather ${pathname} failed with HTTP ${response.status}${safeMessage ? `: ${safeMessage}` : "."}`,
+        );
+    }
+    return response.json();
+}
+
+function getHazards(current, forecast) {
+    const hours = Array.isArray(forecast.forecastHours) ? forecast.forecastHours : [];
+    const values = [];
+    const numeric = (value) => {
+        if (Number.isFinite(value)) {
+            return value;
+        }
+        return Number.isFinite(value?.value) ? value.value : undefined;
+    };
+    const addHazard = (key, description) => values.push({ key, description });
+    const atTime = (hour) => {
+        const value = hour.interval?.startTime;
+        if (!value) {
+            return "";
+        }
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? "" : ` near ${date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })} IST`;
+    };
+
+    const thunderstormProbability = [
+        numeric(current.thunderstormProbability),
+        ...hours.map((hour) => numeric(hour.thunderstormProbability)),
+    ].filter(Number.isFinite);
+    const maxThunderstormProbability = Math.max(...thunderstormProbability, 0);
+    if (maxThunderstormProbability >= 70) {
+        const hour = hours.find((item) => item.thunderstormProbability >= 70);
+        addHazard(
+            "thunderstorm",
+            `Thunderstorm probability ${Math.round(maxThunderstormProbability)}%${hour ? atTime(hour) : ""}`,
+        );
+    }
+
+    const windGusts = [
+        { value: numeric(current.wind?.gust?.value) },
+        ...hours.map((hour) => ({ value: numeric(hour.wind?.gust?.value), hour })),
+    ].filter((item) => Number.isFinite(item.value));
+    const maxWindGust = Math.max(...windGusts.map((item) => item.value), 0);
+    if (maxWindGust >= 60) {
+        const peak = windGusts.find((item) => item.value === maxWindGust);
+        addHazard("wind", `Wind gusts up to ${Math.round(maxWindGust)} km/h${peak?.hour ? atTime(peak.hour) : ""}`);
+    }
+
+    const rainHours = hours
+        .map((hour) => ({
+            amount: numeric(hour.precipitation?.qpf?.quantity ?? hour.precipitation?.qpf),
+            hour,
+        }))
+        .filter((item) => Number.isFinite(item.amount));
+    const peakRain = rainHours.reduce(
+        (peak, item) => item.amount > peak.amount ? item : peak,
+        { amount: 0, hour: null },
+    );
+    if (peakRain.amount >= 25) {
+        addHazard("rain", `Forecast rainfall ${peakRain.amount} mm/hour${peakRain.hour ? atTime(peakRain.hour) : ""}`);
+    }
+
+    const temperatures = [
+        { degrees: current.temperature?.degrees },
+        ...hours.map((hour) => ({ degrees: hour.temperature?.degrees, hour })),
+    ].filter((item) => Number.isFinite(item.degrees));
+    const maxTemperature = temperatures.reduce(
+        (extreme, item) => item.degrees > extreme.degrees ? item : extreme,
+        { degrees: -Infinity, hour: null },
+    );
+    if (maxTemperature.degrees >= 45) {
+        addHazard("heat", `Extreme heat forecast at ${maxTemperature.degrees.toFixed(1)}°C${maxTemperature.hour ? atTime(maxTemperature.hour) : ""}`);
+    }
+    const minTemperature = temperatures.reduce(
+        (extreme, item) => item.degrees < extreme.degrees ? item : extreme,
+        { degrees: Infinity, hour: null },
+    );
+    if (minTemperature.degrees <= 0) {
+        addHazard("cold", `Freezing temperatures forecast at ${minTemperature.degrees.toFixed(1)}°C${minTemperature.hour ? atTime(minTemperature.hour) : ""}`);
+    }
+    return values;
+}
+
+async function checkWeatherConditions() {
+    if (!weatherMonitor.enabled || weatherMonitor.checkInProgress) {
+        return;
+    }
+    weatherMonitor.checkInProgress = true;
+    try {
+        const [current, forecast] = await Promise.all([
+            fetchGoogleWeather("currentConditions:lookup"),
+            fetchGoogleWeather("forecast/hours:lookup"),
+        ]);
+        if (!weatherMonitor.enabled) {
+            return;
+        }
+        if (!current?.temperature || !Array.isArray(forecast?.forecastHours)) {
+            throw new Error("Google Weather API response did not contain current conditions and hourly forecast data.");
+        }
+        const hazards = getHazards(current, forecast);
+        const nextHazards = new Map(hazards.map((hazard) => [hazard.key, hazard]));
+        const newlyActive = hazards.filter((hazard) => !weatherMonitor.activeHazards.has(hazard.key));
+        if (newlyActive.length > 0) {
+            const details = newlyActive.map((hazard) => hazard.description).join("; ");
+            const message = `WEATHER EMERGENCY — ${weatherMonitor.campus}. ${details}. Verify with local authorities and official weather alerts.`;
+            await createBroadcast(weatherMonitor.campus, "emergency", message.slice(0, 500));
+        }
+        weatherMonitor.activeHazards = nextHazards;
+        weatherMonitor.lastError = null;
+        weatherMonitor.lastCheckedAt = new Date().toISOString();
+    } catch (error) {
+        if (weatherMonitor.enabled) {
+            weatherMonitor.lastError = error instanceof Error ? error.message : "Weather check failed.";
+            console.error("Weather monitoring check failed:", weatherMonitor.lastError);
+        }
+    } finally {
+        weatherMonitor.checkInProgress = false;
+    }
+}
+
+function startWeatherMonitor(campus) {
+    if (!googleWeatherApiKey) {
+        const error = new Error("Set GOOGLE_WEATHER_API_KEY on the server before enabling weather monitoring.");
+        error.statusCode = 503;
+        throw error;
+    }
+    if (!Number.isFinite(weatherLatitude) || !Number.isFinite(weatherLongitude)
+        || weatherLatitude < -90 || weatherLatitude > 90
+        || weatherLongitude < -180 || weatherLongitude > 180) {
+        const error = new Error("Weather coordinates are invalid. Set WEATHER_LATITUDE and WEATHER_LONGITUDE.");
+        error.statusCode = 500;
+        throw error;
+    }
+
+    if (weatherMonitor.campus !== campus) {
+        weatherMonitor.activeHazards.clear();
+    }
+    if (weatherMonitor.interval) {
+        clearInterval(weatherMonitor.interval);
+    }
+    weatherMonitor.enabled = true;
+    weatherMonitor.campus = campus;
+    weatherMonitor.interval = setInterval(checkWeatherConditions, weatherPollIntervalMs);
+    weatherMonitor.interval.unref();
+    void checkWeatherConditions();
+}
+
+function stopWeatherMonitor() {
+    if (weatherMonitor.interval) {
+        clearInterval(weatherMonitor.interval);
+        weatherMonitor.interval = null;
+    }
+    weatherMonitor.enabled = false;
+    weatherMonitor.lastError = null;
+}
+
 async function serveStaticFile(request, response, pathname) {
     const file = staticFiles.get(pathname);
     if (!file) {
@@ -217,6 +436,53 @@ const server = createServer(async (request, response) => {
 
     if (request.method === "GET" && url.pathname === "/api/health") {
         sendJson(response, 200, { status: "ok", adminBroadcastConfigured: Boolean(adminToken) });
+        return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/weather/monitor") {
+        sendJson(response, 200, getWeatherMonitorStatus());
+        return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/weather/monitor") {
+        if (!adminToken) {
+            sendJson(response, 503, { error: "Weather monitoring requires ADMIN_BROADCAST_TOKEN on the server." });
+            return;
+        }
+        if (!hasValidAdminToken(request)) {
+            sendJson(response, 401, { error: "Administrator key is invalid." });
+            return;
+        }
+        if (!/^application\/json(?:\s*;|$)/i.test(request.headers["content-type"] || "")) {
+            sendJson(response, 415, { error: "Content-Type must be application/json." });
+            return;
+        }
+
+        try {
+            const body = await readJsonBody(request);
+            if (typeof body?.enabled !== "boolean") {
+                sendJson(response, 400, { error: "Provide enabled as true or false." });
+                return;
+            }
+            if (body.enabled) {
+                const campus = getCampus(body.campus);
+                if (!campus) {
+                    sendJson(response, 400, { error: "A valid campus is required." });
+                    return;
+                }
+                startWeatherMonitor(campus);
+            } else {
+                stopWeatherMonitor();
+            }
+            sendJson(response, 200, getWeatherMonitorStatus());
+        } catch (error) {
+            if (error instanceof Error && error.statusCode) {
+                sendJson(response, error.statusCode, { error: error.message });
+            } else {
+                console.error("Could not update weather monitoring:", error);
+                sendJson(response, 500, { error: "Could not update weather monitoring." });
+            }
+        }
         return;
     }
 
@@ -308,16 +574,7 @@ const server = createServer(async (request, response) => {
                 return;
             }
 
-            const broadcast = {
-                id: randomUUID(),
-                campus,
-                type,
-                message,
-                createdAt: new Date().toISOString(),
-            };
-            await archiveBroadcast(broadcast);
-            const deliveredSessions = publishBroadcast(campus, broadcast);
-            console.info(`Campus ${type} broadcast ${broadcast.id} sent to ${deliveredSessions} connected session(s).`);
+            const { broadcast, deliveredSessions } = await createBroadcast(campus, type, message);
             sendJson(response, 200, { id: broadcast.id, deliveredSessions, campus });
         } catch (error) {
             if (error instanceof Error && error.statusCode) {
@@ -350,6 +607,7 @@ server.on("error", (error) => {
 });
 
 function closeServer() {
+    stopWeatherMonitor();
     for (const sessions of connectedSessions.values()) {
         for (const response of sessions) {
             response.end();
