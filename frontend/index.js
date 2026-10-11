@@ -2,6 +2,7 @@ const adminRoles = new Set(["Campus Security Admin", "Umbrella Super Admin"]);
 const announcementLimit = 4;
 let campusStream;
 let toastTimeout;
+let broadcastInProgress = false;
 
 if (window.lucide) {
     lucide.createIcons();
@@ -10,6 +11,7 @@ if (window.lucide) {
 initializeDashboard();
 
 function initializeDashboard() {
+    updateBroadcastAccess();
     initializeChart();
     connectToCampusStream();
     refreshAudienceCount();
@@ -84,6 +86,7 @@ function applyLogin() {
     const role = document.getElementById("modal-role").value;
     const campus = document.getElementById("modal-campus-input").value.trim();
     document.getElementById("current-role-label").textContent = role;
+    const status = document.getElementById("broadcast-status");
 
     if (campus) {
         const select = document.getElementById("campus-select");
@@ -97,12 +100,30 @@ function applyLogin() {
         select.value = campus;
     }
 
-    const adminPanel = document.getElementById("admin-panel");
-    adminPanel.classList.toggle("hidden", !adminRoles.has(role));
+    updateBroadcastAccess();
+    status.textContent = adminRoles.has(role)
+        ? "Enter the administrator key configured on the broadcast server."
+        : "Sending is locked until you sign in with an administrator role.";
+    status.dataset.state = "";
     toggleModal("login-modal");
     showToast(`Signed in as ${role}.`);
     logEvent(`User signed in with role: ${role}`);
-    updateCampus();
+}
+
+function updateBroadcastAccess() {
+    const role = document.getElementById("current-role-label").textContent;
+    const isAdmin = adminRoles.has(role);
+    const message = document.getElementById("broadcast-access-message");
+    const signInButton = document.getElementById("broadcast-sign-in");
+
+    message.textContent = isAdmin
+        ? "Administrator role selected. Enter the server key to authorize sending."
+        : "Sign in with an administrator role to enable emergency dispatch.";
+    signInButton.classList.toggle("hidden", isAdmin);
+    document.querySelectorAll("#send-broadcast, .emergency-send").forEach((button) => {
+        button.disabled = !isAdmin || broadcastInProgress;
+    });
+
 }
 
 function updateTraffic(value) {
@@ -180,7 +201,6 @@ async function refreshAudienceCount() {
 
 async function sendBroadcast(messageOverride, typeOverride) {
     const status = document.getElementById("broadcast-status");
-    const button = document.getElementById("send-broadcast");
     const role = document.getElementById("current-role-label").textContent;
     const messageInput = document.getElementById("broadcast-message");
     const message = (messageOverride ?? messageInput.value).trim();
@@ -217,7 +237,8 @@ async function sendBroadcast(messageOverride, typeOverride) {
         return;
     }
 
-    button.disabled = true;
+    broadcastInProgress = true;
+    updateBroadcastAccess();
     status.textContent = "Sending to connected campus sessions…";
     status.dataset.state = "sending";
     try {
@@ -246,7 +267,8 @@ async function sendBroadcast(messageOverride, typeOverride) {
         status.dataset.state = "error";
         console.error("Campus broadcast failed:", error);
     } finally {
-        button.disabled = false;
+        broadcastInProgress = false;
+        updateBroadcastAccess();
     }
 }
 
@@ -291,6 +313,17 @@ function dispatchD2M() {
     sendBroadcast(message, "emergency");
 }
 
+function dismissBroadcast() {
+    const banner = document.getElementById("live-broadcast-banner");
+    if (banner.classList.contains("hidden")) {
+        return;
+    }
+
+    banner.classList.add("hidden");
+    banner.classList.remove("is-live");
+    logEvent("Campus broadcast dismissed on this dashboard.");
+}
+
 function receiveBroadcast(broadcast) {
     const feed = document.getElementById("campus-announcements");
     const card = document.createElement("article");
@@ -313,8 +346,40 @@ function receiveBroadcast(broadcast) {
         feed.lastElementChild.remove();
     }
 
+    showBroadcastBanner(broadcast);
     showToast(`${broadcast.type.toUpperCase()} from campus administration.`);
     logEvent(`Campus ${broadcast.type} received.`);
+}
+
+function showBroadcastBanner(broadcast) {
+    const banner = document.getElementById("live-broadcast-banner");
+    const label = document.getElementById("banner-label");
+    const text = document.getElementById("banner-text");
+    const icon = document.getElementById("banner-icon");
+    const bannerType = ["announcement", "alert", "emergency"].includes(broadcast.type)
+        ? broadcast.type
+        : "announcement";
+    const labels = {
+        announcement: "Campus announcement",
+        alert: "Important campus alert",
+        emergency: "Emergency · campus broadcast",
+    };
+    const icons = {
+        announcement: "bell-ring",
+        alert: "triangle-alert",
+        emergency: "siren",
+    };
+
+    banner.classList.remove("announcement", "alert", "emergency", "hidden");
+    banner.classList.add(bannerType, "is-live");
+    banner.setAttribute("role", bannerType === "emergency" ? "alert" : "status");
+    banner.setAttribute("aria-live", bannerType === "emergency" ? "assertive" : "polite");
+    label.textContent = labels[bannerType];
+    text.textContent = broadcast.message;
+    icon.setAttribute("data-lucide", icons[bannerType]);
+    if (window.lucide) {
+        lucide.createIcons({ attrs: { "aria-hidden": "true" } });
+    }
 }
 
 function logEvent(text) {

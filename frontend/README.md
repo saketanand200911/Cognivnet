@@ -38,8 +38,27 @@ CognivNet follows a continuous closed-loop cognitive architecture:
 
 ## 🚀 Quick Start / Local Installation
 
-Because this is built entirely with modern web technologies, you don't need any complex server setups or Python dependencies!
+The dashboard uses HTML, CSS, and JavaScript. The real-time campus broadcast feature requires the included Node.js server.
 
-1. **Clone the repository:**
-   ```bash
-   git clone [https://github.com/saketanand200911/IMC.git](https://github.com/saketanand200911/IMC.git)
+```bash
+git clone https://github.com/saketanand200911/IMC.git
+cd IMC
+```
+
+## Campus announcements and emergency broadcasts
+
+The campus broadcast panel sends announcements, important alerts, and emergencies to dashboard sessions currently connected to the same campus. It uses the included Node.js server and requires Node.js 18 or newer; no extra packages are needed.
+
+To preview the dashboard with VS Code Live Server, open `frontend/index.html`. The emergency dispatcher is visible there, but sending requires the API server below; Live Server by itself only serves static files.
+
+From the repository root, start the server with a private administrator key:
+
+```bash
+ADMIN_BROADCAST_TOKEN='replace-with-a-long-random-secret' node backend/server.js
+```
+
+Open `http://127.0.0.1:4173`. The dispatcher is visible to everyone, but its send buttons stay disabled until **Campus Security Admin** or **Umbrella Super Admin** is selected in the portal dialog. Enter the same key in the broadcast panel to send. The portal role selector is only a demo UI; the server-side key is what authorizes sending. The server refuses to send if `ADMIN_BROADCAST_TOKEN` is not configured.
+
+Type custom text in **Custom broadcast message**. Use **Emergency category** and **Send emergency alert** to prepend a medical, security, or fire label and publish it as an emergency. Connected sessions display the message in a dismissible live banner; emergencies use a high-visibility alert banner.
+
+Broadcasts only reach connected dashboard sessions for the selected campus. The recipient count represents connected sessions, not enrolled people or devices. Offline users and physical devices do not receive these messages. Despite the D2M-themed prototype UI, this web server is not a cellular/D2M transmitter and cannot deliver without internet connectivity. Production use needs campus identity-provider authentication, HTTPS, and an integrated push-notification or telecom delivery provider for mobile and offline users.

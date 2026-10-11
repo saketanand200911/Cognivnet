@@ -13,7 +13,9 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,500;1,600;1,700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,500;1,600;1,700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -49,6 +51,19 @@
         </div>
     </header>
 
+    <section id="live-broadcast-banner" class="live-broadcast-banner hidden" role="status" aria-live="polite"
+        aria-atomic="true" aria-labelledby="banner-label">
+        <div class="live-broadcast-content">
+            <i id="banner-icon" data-lucide="bell-ring" class="live-broadcast-icon" aria-hidden="true"></i>
+            <div class="live-broadcast-copy">
+                <span id="banner-label" class="live-broadcast-label">Campus announcement</span>
+                <p id="banner-text"></p>
+            </div>
+        </div>
+        <button type="button" class="live-broadcast-dismiss" onclick="dismissBroadcast()"
+            aria-label="Dismiss this campus broadcast">Dismiss</button>
+    </section>
+
     <!-- MAIN DASHBOARD CONTAINER -->
     <main class="flex-1 p-6 grid grid-cols-1 lg:grid-cols-4 gap-6 max-w-7xl mx-auto w-full">
 
@@ -58,11 +73,13 @@
                 <h2 id="hero-title">Intelligence in every <em>connection.</em></h2>
                 <p>One cognitive layer for every campus. See your network think, adapt, and respond in real time.</p>
                 <div class="hero-actions">
-                    <a class="hero-primary" href="#throughput-section">Explore live network <i data-lucide="arrow-down-right"></i></a>
+                    <a class="hero-primary" href="#throughput-section">Explore live network <i
+                            data-lucide="arrow-down-right"></i></a>
                     <span class="hero-caption"><i data-lucide="shield-check"></i> Resilient by design</span>
                 </div>
             </div>
-            <div class="network-visual" aria-label="Live network connections linking the campus core to medical, security, and energy zones">
+            <div class="network-visual"
+                aria-label="Live network connections linking the campus core to medical, security, and energy zones">
                 <svg class="network-lines" viewBox="0 0 520 300" preserveAspectRatio="none" aria-hidden="true">
                     <defs>
                         <linearGradient id="node-gradient" x1="0" y1="0" x2="1" y2="1">
@@ -79,10 +96,18 @@
                     <path class="node-flow" d="M260 150 C196 183 160 226 94 240" />
                     <path class="node-flow" d="M260 150 C330 184 368 222 433 237" />
                 </svg>
-                <div class="satellite satellite-one"><span class="satellite-icon"><i data-lucide="radio-tower"></i></span><span><strong>5G / 6G Core</strong><small>Primary network</small></span><b></b></div>
-                <div class="satellite satellite-two"><span class="satellite-icon"><i data-lucide="heart-pulse"></i></span><span><strong>Medical · A</strong><small>D2M priority</small></span><b></b></div>
-                <div class="satellite satellite-three"><span class="satellite-icon"><i data-lucide="shield"></i></span><span><strong>Security · B</strong><small>Load balanced</small></span><b></b></div>
-                <div class="satellite satellite-four"><span class="satellite-icon"><i data-lucide="zap"></i></span><span><strong>Energy · C</strong><small>Live telemetry</small></span><b></b></div>
+                <div class="satellite satellite-one"><span class="satellite-icon"><i
+                            data-lucide="radio-tower"></i></span><span><strong>5G / 6G Core</strong><small>Primary
+                            network</small></span><b></b></div>
+                <div class="satellite satellite-two"><span class="satellite-icon"><i
+                            data-lucide="heart-pulse"></i></span><span><strong>Medical · A</strong><small>D2M
+                            priority</small></span><b></b></div>
+                <div class="satellite satellite-three"><span class="satellite-icon"><i
+                            data-lucide="shield"></i></span><span><strong>Security · B</strong><small>Load
+                            balanced</small></span><b></b></div>
+                <div class="satellite satellite-four"><span class="satellite-icon"><i
+                            data-lucide="zap"></i></span><span><strong>Energy · C</strong><small>Live
+                            telemetry</small></span><b></b></div>
                 <div class="network-core">
                     <span class="core-orbit"></span>
                     <span class="core-mark"><i data-lucide="radio"></i></span>
@@ -93,7 +118,8 @@
             </div>
         </section>
 
-        <section id="campus-announcements" class="announcement-feed hidden" aria-label="Campus announcements" aria-live="polite"></section>
+        <section id="campus-announcements" class="announcement-feed hidden" aria-label="Campus announcements"
+            aria-live="polite"></section>
 
         <!-- SIDEBAR CONTROLS -->
         <aside class="lg:col-span-1 space-y-6">
@@ -135,14 +161,21 @@
                 </div>
             </div>
 
-            <!-- Security Admin Emergency Dispatcher (Conditional) -->
-            <section id="admin-panel"
-                class="hidden broadcast-panel rounded-xl p-5 shadow-xl space-y-4" aria-labelledby="broadcast-heading">
+            <!-- Emergency dispatcher is visible to all users; sending requires an administrator role. -->
+            <section id="admin-panel" class="broadcast-panel rounded-xl p-5 shadow-xl space-y-4"
+                aria-labelledby="broadcast-heading">
                 <div>
                     <h2 id="broadcast-heading" class="text-sm font-semibold uppercase tracking-wider flex items-center">
-                        <i data-lucide="radio-tower" class="w-4 h-4 mr-2"></i> Campus Broadcast
+                        <i data-lucide="siren" class="w-4 h-4 mr-2"></i> Emergency &amp; Campus Broadcast
                     </h2>
-                    <p class="mt-2 text-xs text-slate-400">Send an announcement or urgent alert to connected dashboard sessions in this campus.</p>
+                    <p class="mt-2 text-xs text-slate-400">Send an announcement or urgent alert to connected dashboard
+                        sessions in this campus.</p>
+                </div>
+                <div class="broadcast-access" role="status">
+                    <p id="broadcast-access-message">Sign in with an administrator role to enable emergency dispatch.</p>
+                    <button id="broadcast-sign-in" type="button" onclick="toggleModal('login-modal')">
+                        Sign in to enable dispatch
+                    </button>
                 </div>
                 <div class="audience-status" aria-live="polite">
                     <span class="audience-indicator"></span>
@@ -150,36 +183,40 @@
                     <span id="broadcast-connection">Connecting…</span>
                 </div>
                 <label class="broadcast-label" for="broadcast-type">Message type</label>
-                <select id="broadcast-type" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm">
+                <select id="broadcast-type"
+                    class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm">
                     <option value="announcement">Announcement</option>
                     <option value="alert">Important alert</option>
                     <option value="emergency">Emergency</option>
                 </select>
-                <label class="broadcast-label" for="broadcast-message">Message</label>
+                <label class="broadcast-label" for="broadcast-message">Custom broadcast message</label>
                 <textarea id="broadcast-message" rows="4" maxlength="500" required
-                    placeholder="Write a clear message for campus users…"
+                    placeholder="Type the message campus users should see…"
                     class="broadcast-message w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm"></textarea>
                 <label class="broadcast-label" for="broadcast-token">Administrator key</label>
                 <input id="broadcast-token" type="password" autocomplete="off" spellcheck="false"
                     placeholder="Enter the key configured on the broadcast server"
                     class="broadcast-message w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm">
                 <p id="broadcast-status" class="broadcast-status" role="status" aria-live="polite">
-                    Broadcasts require a configured server and administrator key.
+                    Sending is locked until you sign in with an administrator role.
                 </p>
                 <button id="send-broadcast" type="button" onclick="sendBroadcast()"
-                    class="broadcast-send w-full text-white text-xs font-bold py-3 rounded-lg transition flex items-center justify-center space-x-2">
+                    class="broadcast-send w-full text-white text-xs font-bold py-3 rounded-lg transition flex items-center justify-center space-x-2"
+                    disabled>
                     <i data-lucide="send" class="w-4 h-4"></i>
                     <span>Send to this campus</span>
                 </button>
                 <div class="emergency-tools">
-                    <label class="broadcast-label" for="emergency-type">Emergency message starter</label>
-                    <select id="emergency-type" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs">
+                    <label class="broadcast-label" for="emergency-type">Emergency category</label>
+                    <select id="emergency-type"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs">
                         <option>Medical Emergency / Ambulance Dispatch</option>
                         <option>Security Breach / Campus Theft Alert</option>
                         <option>Fire Hazard / Evacuation Notice</option>
                     </select>
                     <button type="button" onclick="dispatchD2M()"
-                        class="emergency-send w-full text-white text-xs font-bold py-2.5 rounded-lg transition flex items-center justify-center space-x-2">
+                        class="emergency-send w-full text-white text-xs font-bold py-2.5 rounded-lg transition flex items-center justify-center space-x-2"
+                        disabled>
                         <i data-lucide="siren" class="w-4 h-4"></i>
                         <span>Send emergency alert</span>
                     </button>
