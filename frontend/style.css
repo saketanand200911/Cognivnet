@@ -8,6 +8,11 @@
     --glass-border: rgba(255, 255, 255, 0.1);
     --ease: cubic-bezier(0.4, 0, 0.2, 1);
     --site-header-height: 76px;
+    --ok: #84a88a;
+    --warn: #d1a04f;
+    --danger: #d17863;
+    --accent: var(--gold-light);
+    
 }
 
 html {
@@ -875,6 +880,40 @@ main > section > div:nth-child(1) > div > p:nth-child(2) { font-size: 15px !impo
     align-items: center;
     gap: 0.35rem;
     font-size: 9px;
+}
+/* ===== Network health theming (set by index.js) ===== */
+body[data-health="ok"]   { --accent: var(--ok); }
+body[data-health="warn"] { --accent: var(--warn); }
+body[data-health="bad"]  { --accent: var(--danger); }
+
+.site-header,
+.network-core {
+    transition: border-color 400ms var(--ease), box-shadow 400ms var(--ease);
+}
+
+body[data-health] .site-header {
+    border-bottom-color: color-mix(in srgb, var(--accent) 40%, transparent) !important;
+}
+
+body[data-health] .network-core {
+    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+    box-shadow: 0 0 58px color-mix(in srgb, var(--accent) 28%, transparent),
+                inset 0 0 28px rgba(167, 139, 113, 0.11);
+}
+
+body[data-health] #metric-status { color: var(--accent) !important; }
+
+/* The affected node lights up for each scenario */
+body[data-scenario="outage"]     .satellite-one > b,
+body[data-scenario="emergency"]  .satellite-two > b,
+body[data-scenario="congestion"] .satellite-three > b {
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+}
+
+/* Busier network = faster flow lines */
+body[data-scenario="congestion"][data-health="warn"] .node-flow {
+    animation-duration: 1s;
 }
 
 @keyframes pulsing-branch {
