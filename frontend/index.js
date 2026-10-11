@@ -9,6 +9,114 @@ if (window.lucide) {
 }
 
 initializeDashboard();
+initializePageNavigation();
+
+const broadcastTypeLabels = {
+    announcement: "Announcement",
+    alert: "Important alert",
+    emergency: "Emergency",
+};
+
+function initializePageNavigation() {
+    window.addEventListener("hashchange", updateCurrentPage);
+    document.getElementById("history-refresh").addEventListener("click", loadBroadcastHistory);
+    updateCurrentPage();
+}
+
+function updateCurrentPage() {
+    const isHistoryPage = window.location.hash === "#broadcast-history";
+    const dashboardView = document.getElementById("dashboard-view");
+    const historyView = document.getElementById("broadcast-history-view");
+    const historyLink = document.getElementById("history-nav-link");
+    const dashboardLink = document.getElementById("dashboard-nav-link");
+
+    dashboardView.hidden = isHistoryPage;
+    historyView.hidden = !isHistoryPage;
+    document.body.dataset.view = isHistoryPage ? "history" : "dashboard";
+    document.title = isHistoryPage ? "Broadcast History — CognivNet" : "CognivNet — Umbrella Campus & D2M Hub";
+
+    if (isHistoryPage) {
+        historyLink.setAttribute("aria-current", "page");
+        dashboardLink.removeAttribute("aria-current");
+        loadBroadcastHistory();
+    } else {
+        dashboardLink.setAttribute("aria-current", "page");
+        historyLink.removeAttribute("aria-current");
+    }
+}
+
+async function loadBroadcastHistory() {
+    const refreshButton = document.getElementById("history-refresh");
+    const historyStatus = document.getElementById("history-status");
+    const historyCount = document.getElementById("history-count");
+    const historyList = document.getElementById("broadcast-history");
+    refreshButton.disabled = true;
+    historyStatus.textContent = "Loading broadcast history…";
+    historyStatus.hidden = false;
+
+    try {
+        const response = await fetch("/api/broadcasts/history", {
+            headers: { Accept: "application/json" },
+        });
+        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.error || `History request failed with status ${response.status}.`);
+        }
+        if (!Array.isArray(result.broadcasts)) {
+            throw new Error("The server returned an invalid broadcast history.");
+        }
+
+        historyList.replaceChildren(...result.broadcasts.map(createBroadcastHistoryCard));
+        historyCount.textContent = `${result.broadcasts.length} archived broadcast${result.broadcasts.length === 1 ? "" : "s"}`;
+        historyStatus.dataset.state = "";
+        historyStatus.textContent = result.broadcasts.length === 0
+            ? "No broadcasts have been archived yet."
+            : "";
+        historyStatus.hidden = result.broadcasts.length > 0;
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    } catch (error) {
+        historyList.replaceChildren();
+        historyCount.textContent = "History unavailable";
+        historyStatus.textContent = error instanceof Error
+            ? error.message
+            : "Could not load broadcast history.";
+        historyStatus.dataset.state = "error";
+        historyStatus.hidden = false;
+    } finally {
+        refreshButton.disabled = false;
+    }
+}
+
+function createBroadcastHistoryCard(broadcast) {
+    const item = document.createElement("li");
+    item.className = "history-card";
+
+    const header = document.createElement("div");
+    header.className = "history-card-header";
+
+    const type = document.createElement("span");
+    type.className = "history-type";
+    type.textContent = broadcastTypeLabels[broadcast.type] || "Broadcast";
+
+    const time = document.createElement("time");
+    const date = new Date(broadcast.createdAt);
+    time.dateTime = broadcast.createdAt;
+    time.textContent = Number.isNaN(date.getTime()) ? "Unknown date" : date.toLocaleString();
+
+    const message = document.createElement("p");
+    message.className = "history-message";
+    message.textContent = broadcast.message;
+
+    const campus = document.createElement("p");
+    campus.className = "history-campus";
+    campus.textContent = `Campus: ${broadcast.campus}`;
+
+    header.append(type, time);
+    item.append(header, message, campus);
+    return item;
+}
 
 function initializeDashboard() {
     updateBroadcastAccess();
@@ -32,28 +140,47 @@ function initializeChart() {
                 {
                     label: "D2M Emergency Broadcast Channel",
                     data: [45, 52, 48, 70, 85, 90],
-                    borderColor: "#c9b8a0",
-                    backgroundColor: "rgba(201, 184, 160, 0.12)",
+                    borderColor: "#1a3c2b",
+                    backgroundColor: "rgba(26, 60, 43, 0.08)",
                     fill: true,
-                    tension: 0.4,
+                    tension: 0,
                 },
                 {
                     label: "General Campus Data Slice",
                     data: [120, 135, 110, 150, 140, 160],
-                    borderColor: "#786c5d",
-                    backgroundColor: "rgba(120, 108, 93, 0.08)",
+                    borderColor: "#ff8c69",
+                    backgroundColor: "rgba(255, 140, 105, 0.08)",
                     fill: true,
-                    tension: 0.4,
+                    tension: 0,
                 },
             ],
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { labels: { color: "#b4aa9d", font: { size: 11 } } } },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: "#3a3a38",
+                        font: { family: "'JetBrains Mono', monospace", size: 10 },
+                    },
+                },
+            },
             scales: {
-                x: { grid: { color: "rgba(201, 184, 160, 0.08)" }, ticks: { color: "#857d72" } },
-                y: { grid: { color: "rgba(201, 184, 160, 0.08)" }, ticks: { color: "#857d72" } },
+                x: {
+                    grid: { color: "rgba(58, 58, 56, 0.12)" },
+                    ticks: {
+                        color: "#3a3a38",
+                        font: { family: "'JetBrains Mono', monospace", size: 9 },
+                    },
+                },
+                y: {
+                    grid: { color: "rgba(58, 58, 56, 0.12)" },
+                    ticks: {
+                        color: "#3a3a38",
+                        font: { family: "'JetBrains Mono', monospace", size: 9 },
+                    },
+                },
             },
         },
     });
@@ -284,25 +411,25 @@ function triggerScenario() {
     const lossLabel = document.getElementById("metric-loss");
 
     if (scenario === "emergency") {
-        statusLabel.textContent = "🟢 D2M Broadcast Active";
+        statusLabel.textContent = "D2M / ACTIVE";
         latencyLabel.textContent = "3 ms";
         lossLabel.textContent = "0.0% (URLLC Sliced)";
         showToast("Emergency network scenario simulated. Use Campus Broadcast to send a user alert.");
         logEvent("ALERT: Emergency scenario simulated. No message was sent.");
     } else if (scenario === "outage") {
-        statusLabel.textContent = "🔴 Primary Tower Down";
+        statusLabel.textContent = "TOWER / OFFLINE";
         latencyLabel.textContent = "42 ms";
         lossLabel.textContent = "1.8% (Failover Mesh)";
         showToast("Simulated tower failure! AI routing traffic to backup mesh.");
         logEvent("WARNING: 5G primary tower outage detected. AI failover protocol active.");
     } else if (scenario === "congestion") {
-        statusLabel.textContent = "🟡 High Traffic State";
+        statusLabel.textContent = "TRAFFIC / HIGH";
         latencyLabel.textContent = "24 ms";
         lossLabel.textContent = "0.6% (Load Balanced)";
         showToast("Campus mega event congestion simulated.");
         logEvent("INFO: Traffic surge detected across campus nodes.");
     } else {
-        statusLabel.textContent = "🟢 5G/6G Core Active";
+        statusLabel.textContent = "CORE / STABLE";
         latencyLabel.textContent = "8 ms";
         lossLabel.textContent = "0.1% (Optimal)";
         showToast("Network returned to normal stable state.");

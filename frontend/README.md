@@ -61,4 +61,6 @@ Open `http://127.0.0.1:4173`. The dispatcher is visible to everyone, but its sen
 
 Type custom text in **Custom broadcast message**. Use **Emergency category** and **Send emergency alert** to prepend a medical, security, or fire label and publish it as an emergency. Connected sessions display the message in a dismissible live banner; emergencies use a high-visibility alert banner.
 
+Select **04. Broadcast history** in the dashboard navigation to browse archived broadcasts across all campuses, newest first. The server appends each accepted broadcast to `backend/broadcast-history.jsonl`, which is kept locally and excluded from Git. History recording starts when this feature is installed; broadcasts sent before then cannot be recovered.
+
 Broadcasts only reach connected dashboard sessions for the selected campus. The recipient count represents connected sessions, not enrolled people or devices. Offline users and physical devices do not receive these messages. Despite the D2M-themed prototype UI, this web server is not a cellular/D2M transmitter and cannot deliver without internet connectivity. Production use needs campus identity-provider authentication, HTTPS, and an integrated push-notification or telecom delivery provider for mobile and offline users.

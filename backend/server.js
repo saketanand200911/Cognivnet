@@ -1,9 +1,10 @@
 const { createServer } = require("node:http");
 const { timingSafeEqual, randomUUID } = require("node:crypto");
-const { readFile } = require("node:fs/promises");
+const { appendFile, readFile } = require("node:fs/promises");
 const path = require("node:path");
 
 const root = path.resolve(__dirname, "..", "frontend");
+const broadcastHistoryPath = path.join(__dirname, "broadcast-history.jsonl");
 const host = process.env.HOST || "127.0.0.1";
 const port = Number(process.env.PORT || 4173);
 const adminToken = process.env.ADMIN_BROADCAST_TOKEN || "";
@@ -11,6 +12,7 @@ const maxMessageBytes = 8 * 1024;
 const maxBroadcastsPerMinute = 20;
 const connectedSessions = new Map();
 const rateLimits = new Map();
+let historyWrite = Promise.resolve();
 
 const staticFiles = new Map([
     ["/", ["index.html", "text/html; charset=utf-8"]],
@@ -41,6 +43,30 @@ function getCampus(value) {
 
 function getSessionCount(campus) {
     return connectedSessions.get(campus)?.size || 0;
+}
+
+async function archiveBroadcast(broadcast) {
+    const write = historyWrite.catch(() => {}).then(() => (
+        appendFile(broadcastHistoryPath, `${JSON.stringify(broadcast)}\n`, "utf8")
+    ));
+    historyWrite = write;
+    await write;
+}
+
+async function readBroadcastHistory(campus) {
+    await historyWrite;
+    let content;
+    try {
+        content = await readFile(broadcastHistoryPath, "utf8");
+    } catch (error) {
+        if (error.code === "ENOENT") {
+            return [];
+        }
+        throw error;
+    }
+
+    const broadcasts = content.split("\n").filter(Boolean).map((line) => JSON.parse(line));
+    return broadcasts.filter((broadcast) => !campus || broadcast.campus === campus).reverse();
 }
 
 function removeSession(campus, response) {
@@ -161,6 +187,23 @@ const server = createServer(async (request, response) => {
         return;
     }
 
+    if (request.method === "GET" && url.pathname === "/api/broadcasts/history") {
+        const campusValue = url.searchParams.get("campus");
+        const campus = campusValue === null ? null : getCampus(campusValue);
+        if (campusValue !== null && !campus) {
+            sendJson(response, 400, { error: "A valid campus is required." });
+            return;
+        }
+
+        try {
+            sendJson(response, 200, { broadcasts: await readBroadcastHistory(campus) });
+        } catch (error) {
+            console.error("Could not read campus broadcast history:", error);
+            sendJson(response, 500, { error: "Could not load campus broadcast history." });
+        }
+        return;
+    }
+
     if (request.method === "GET" && url.pathname === "/api/broadcasts/audience") {
         const campus = getCampus(url.searchParams.get("campus"));
         if (!campus) {
@@ -239,6 +282,7 @@ const server = createServer(async (request, response) => {
                 message,
                 createdAt: new Date().toISOString(),
             };
+            await archiveBroadcast(broadcast);
             const deliveredSessions = publishBroadcast(campus, broadcast);
             console.info(`Campus ${type} broadcast ${broadcast.id} sent to ${deliveredSessions} connected session(s).`);
             sendJson(response, 200, { id: broadcast.id, deliveredSessions, campus });
