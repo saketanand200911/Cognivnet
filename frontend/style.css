@@ -534,7 +534,7 @@ main {
 .network-live strong { color: #a9c9ae; font-size: 8px; letter-spacing: 0.15em; }
 
 main > aside > div,
-main > section:not(.network-hero) > div,
+main > section:not(.network-hero) > div:not(#satellite-map-card),
 .broadcast-panel,
 #login-modal > div {
     border-color: var(--glass-border) !important;
@@ -942,6 +942,147 @@ body[data-scenario="congestion"][data-health="warn"] .node-flow {
 @keyframes emergency-flash {
     0%, 100% { filter: brightness(1); }
     50% { filter: brightness(1.22); }
+}
+
+/* ===== Satellite Map Card ===== */
+#satellite-map-card {
+    position: relative;
+    overflow: hidden;
+}
+
+#satellite-map {
+    width: 100% !important;
+    height: 440px !important;
+    min-height: 420px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+    position: relative !important;
+    z-index: 10 !important;
+    background: #0b1120 !important;
+    overflow: hidden !important;
+}
+
+/* Ensure Leaflet tiles and map container render cleanly */
+.leaflet-container {
+    width: 100% !important;
+    height: 100% !important;
+    font-family: "JetBrains Mono", monospace !important;
+    background: #020617 !important;
+}
+
+.leaflet-tile-pane {
+    z-index: 2 !important;
+}
+
+.leaflet-tile {
+    filter: saturate(1.1) brightness(0.95);
+    visibility: inherit !important;
+}
+
+.custom-marker-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    border: 2px solid #ffffff;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.custom-marker-icon:hover {
+    transform: scale(1.15);
+}
+
+/* Leaflet permanent badge styling */
+.cognivnet-permanent-tooltip {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+.cognivnet-permanent-tooltip::before {
+    display: none !important;
+}
+
+/* Leaflet dark theme popups */
+.leaflet-popup-content-wrapper {
+    background: #0f172a !important;
+    color: #e2e8f0 !important;
+    border: 1px solid rgba(148, 163, 184, 0.25) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7) !important;
+    padding: 0 !important;
+}
+
+.leaflet-popup-content {
+    margin: 0 !important;
+    line-height: inherit !important;
+}
+
+.leaflet-popup-tip {
+    background: #0f172a !important;
+}
+
+.leaflet-popup-close-button {
+    color: #94a3b8 !important;
+    padding: 6px 10px 0 0 !important;
+}
+
+.leaflet-popup-close-button:hover {
+    color: #ffffff !important;
+}
+
+#satellite-map-card::after {
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #34d399, #22d3ee, #fbbf24, #a78bfa);
+    content: "";
+    opacity: 0.6;
+    border-radius: 0 0 12px 12px;
+}
+
+/* Dark-themed Google Maps info windows */
+.gm-style .gm-style-iw-c {
+    background: #0f172a !important;
+    border: 1px solid rgba(167, 139, 113, 0.3) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+    padding: 0 !important;
+}
+
+.gm-style .gm-style-iw-d {
+    overflow: hidden !important;
+}
+
+.gm-style .gm-style-iw-tc::after {
+    background: #0f172a !important;
+}
+
+.gm-style .gm-ui-hover-effect {
+    filter: invert(1);
+}
+
+#map-toggle-tilt,
+#map-rotate-btn {
+    cursor: pointer;
+    font-family: "JetBrains Mono", monospace;
+}
+
+#map-toggle-tilt:hover,
+#map-rotate-btn:hover {
+    background: rgba(167, 139, 113, 0.2) !important;
+    border-color: rgba(201, 184, 160, 0.4) !important;
+    color: #eee8df !important;
+}
+
+.map-zone-legend {
+    font-family: "JetBrains Mono", monospace;
 }
 
 .history-main {
@@ -1668,9 +1809,8 @@ main:not(.history-main) {
 .network-live strong { color: var(--forest); }
 
 main > aside > div,
-main > section:not(.network-hero) > div,
-.broadcast-panel,
-#login-modal > div {
+main > section:not(.network-hero) > div:not(#satellite-map-card),
+.broadcast-panel {
     border: 0 !important;
     border-radius: 0 !important;
     background: var(--paper) !important;
@@ -1681,7 +1821,19 @@ main > section:not(.network-hero) > div,
 }
 
 main > aside > div,
-main > section:not(.network-hero) > div { border-right: 1px solid rgba(58, 58, 56, 0.18) !important; }
+main > section:not(.network-hero) > div:not(#satellite-map-card) { border-right: 1px solid rgba(58, 58, 56, 0.18) !important; }
+
+/* Dedicated card styling for satellite map */
+#satellite-map-card {
+    background: var(--paper) !important;
+    border-right: 1px solid rgba(58, 58, 56, 0.18) !important;
+    position: relative !important;
+    padding: clamp(1rem, 2vw, 1.5rem) !important;
+}
+
+#satellite-map {
+    background-color: #0b1120 !important;
+}
 
 main > aside { display: grid; align-content: start; gap: 1px !important; }
 main > section.lg\:col-span-3 { display: grid; align-content: start; gap: 1px !important; }
@@ -1696,8 +1848,6 @@ main > section.lg\:col-span-3 > div {
 }
 
 main select,
-#login-modal select,
-#login-modal input,
 .broadcast-message {
     min-height: 42px;
     border: 1px solid rgba(58, 58, 56, 0.28) !important;
@@ -1712,8 +1862,6 @@ main select,
 textarea.broadcast-message { min-height: 100px; }
 
 main select:focus,
-#login-modal select:focus,
-#login-modal input:focus,
 .broadcast-message:focus {
     border-color: var(--forest) !important;
     box-shadow: none !important;
@@ -2105,43 +2253,47 @@ body[data-scenario="congestion"] .satellite-three > b { background: var(--accent
     z-index: 0;
     width: min(100% - 3rem, 1120px);
     margin: 0 auto;
-    padding: clamp(2.5rem, 7vw, 6rem) 0;
+    padding: clamp(2rem, 5vw, 4rem) 0;
 }
 
-.history-heading { max-width: 760px; margin-bottom: 2.5rem; }
-.history-eyebrow { color: var(--forest) !important; }
+.history-heading { max-width: 760px; margin-bottom: 2rem; }
+.history-eyebrow { color: #38bdf8 !important; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
 .history-heading h2 {
-    margin: 1.1rem 0;
-    color: var(--forest);
+    margin: 0.8rem 0;
+    color: #f8fafc;
     font-family: "Space Grotesk", sans-serif;
-    font-size: clamp(3.5rem, 8vw, 6rem);
+    font-size: clamp(2rem, 5vw, 3.5rem);
     font-style: normal;
-    font-weight: 600;
-    letter-spacing: -0.08em;
-    line-height: 0.9;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
 }
 
 .history-heading > p:not(.history-eyebrow) {
     max-width: 600px;
-    color: var(--grid);
+    color: #94a3b8;
     font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
-    line-height: 1.8;
+    font-size: 12px;
+    line-height: 1.7;
 }
 
-.history-heading .history-note { color: var(--forest); }
+.history-heading .history-note { color: #64748b; font-size: 11px; margin-top: 0.5rem; }
 
 .history-section {
     overflow: hidden;
-    border: 1px solid rgba(58, 58, 56, 0.2);
-    border-radius: 0;
-    background: var(--paper);
-    box-shadow: none;
+    border: 1px solid #1e293b;
+    border-radius: 14px;
+    background: #090d16;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
 }
 
 .history-toolbar {
-    padding: 1.3rem 1.5rem;
-    border-bottom: 1px solid rgba(58, 58, 56, 0.2);
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid #1e293b;
+    background: #0f172a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 main.history-main > .history-section > .history-toolbar > div {
@@ -2153,54 +2305,67 @@ main.history-main > .history-section > .history-toolbar > div {
     box-shadow: none !important;
 }
 
-.history-toolbar h3 { color: var(--forest); font-family: "Space Grotesk", sans-serif; font-size: 16px; }
-.history-toolbar p { color: var(--grid); font-family: "JetBrains Mono", monospace; font-size: 9px; }
+.history-toolbar h3 { color: #f1f5f9; font-family: "Space Grotesk", sans-serif; font-size: 15px; font-weight: 700; }
+.history-toolbar p { color: #38bdf8; font-family: "JetBrains Mono", monospace; font-size: 11px; }
 
 .history-refresh {
-    padding: 0.65rem 0.8rem;
-    border: 1px solid rgba(26, 60, 43, 0.35);
-    border-radius: 0;
-    background: transparent;
-    color: var(--forest);
+    padding: 0.55rem 0.85rem;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    background: #1e293b;
+    color: #e2e8f0;
     font-family: "JetBrains Mono", monospace;
-    font-size: 9px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-.history-refresh:hover:not(:disabled) { background: rgba(26, 60, 43, 0.06); }
-.history-status { padding: 1.5rem; }
-.history-list { gap: 1px; padding: 1px; background: rgba(58, 58, 56, 0.2); }
+.history-refresh:hover:not(:disabled) { background: #334155; color: #38bdf8; border-color: #38bdf8; }
+.history-status { padding: 1.5rem; color: #94a3b8; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.history-list { gap: 8px; padding: 12px; background: #020617; display: flex; flex-direction: column; }
 
 .history-card {
     padding: 1.2rem 1.4rem;
-    border: 0;
-    border-radius: 0;
-    background: var(--paper);
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    background: #0f172a;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+.history-card:hover {
+    border-color: #334155;
+    background: #131d33;
 }
 
 .history-type {
-    padding: 0.3rem 0.5rem;
-    border: 1px solid rgba(26, 60, 43, 0.25);
-    border-radius: 0;
-    background: rgba(26, 60, 43, 0.05);
-    color: var(--forest);
+    padding: 0.25rem 0.6rem;
+    border: 1px solid #38bdf840;
+    border-radius: 6px;
+    background: #0284c715;
+    color: #38bdf8;
     font-family: "JetBrains Mono", monospace;
-    font-size: 9px;
+    font-size: 10px;
+    font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
 }
 
 .history-card time,
 .history-campus {
-    color: var(--grid);
+    color: #64748b;
     font-family: "JetBrains Mono", monospace;
-    font-size: 9px;
+    font-size: 10px;
 }
 
 .history-message {
-    color: var(--forest);
+    color: #f1f5f9;
     font-family: "General Sans", "Space Grotesk", Arial, sans-serif;
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.7;
+    margin: 0.75rem 0 0.5rem;
 }
 
 @media (max-width: 900px) {
@@ -2264,4 +2429,63 @@ main.history-main > .history-section > .history-toolbar > div {
 
 @media (prefers-reduced-motion: reduce) {
     .node-flow { animation: none !important; }
+}
+
+/* --- AI Assistant Broadcast Copilot Styling --- */
+.ai-copilot-main {
+    animation: fadeInCopilot 0.25s ease-out;
+}
+
+@keyframes fadeInCopilot {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.copilot-page-heading h2 {
+    font-family: var(--font-display, "Space Grotesk", sans-serif);
+    letter-spacing: -0.02em;
+}
+
+#copilot-output-box {
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
+    border: 1px dashed rgba(16, 185, 129, 0.25);
+    transition: all 0.2s ease;
+}
+
+#copilot-output-box:hover {
+    border-color: rgba(16, 185, 129, 0.5);
+}
+
+.main-nav a[href="#ai-copilot"][aria-current="page"] {
+    color: #c084fc !important;
+    border-bottom: 2px solid #a855f7;
+    background: rgba(168, 85, 247, 0.1);
+}
+
+/* --- Medical SOS Dedicated Portal View Styling --- */
+.medical-sos-main {
+    animation: fadeInSos 0.25s ease-out;
+}
+
+@keyframes fadeInSos {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.main-nav a[href="#medical-sos"][aria-current="page"] {
+    color: #f87171 !important;
+    border-bottom: 2px solid #ef4444;
+    background: rgba(239, 68, 68, 0.12);
 }
